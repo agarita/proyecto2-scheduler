@@ -4,8 +4,10 @@
 #include <gtk/gtk.h>
 #include <stdio.h>
 
+#include "elargo.h"
+
 static void activate(GtkApplication* app, gpointer user_data);
 
-double taylor(int n);
+double arctan(int n);
 
 #endif

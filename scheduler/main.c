@@ -1,5 +1,8 @@
 #include "main.h"
 
+/*--------
+ INTERFAZ
+--------*/
 static void activate (GtkApplication* app, gpointer user_data){
   GtkWidget *window;
 
@@ -9,20 +12,20 @@ static void activate (GtkApplication* app, gpointer user_data){
   gtk_widget_show_all (window);
 }
 
-double taylor(int n){
-  double sum = 1.0;
-  int sign = -1, i = 1;
-
-  for(i = 1; i < n; i++){
-    sum += sign / (2.0 * i + 1.0);
-    printf("%f\n", 4.0*sum);
-    sign = -sign;
-  }
-  return 4.0*sum;
+/*-------------
+ TAYLOR SERIES
+-------------*/
+double arctan(int n){
+  return 0.0;
 }
 
 int main(int argc, char *argv[]) {
-  taylor(2000);
+  struct Elong res;
+  res.numero[0] = 1;
+  res.largo = 1;
+  elong_factorial(100, &res);
+  elong_print(&res);
+  return 0;
 
   /*GtkApplication *app;
   int status;
