@@ -1,0 +1,8 @@
+Algoritmo de Calendarización
+Modo de Operación
+Quantum / Trabajo a realizar
+
+Tiempo de llegada de Proceso | Cantidad de Trabajo
+Tiempo de llegada de Proceso | Cantidad de Trabajo
+Tiempo de llegada de Proceso | Cantidad de Trabajo
+Tiempo de llegada de Proceso | Cantidad de Trabajo

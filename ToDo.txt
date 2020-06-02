@@ -1,0 +1,37 @@
+To-Do
+-------------------
+1. Algoritmos de Calendarización
+ + FCFS
+ + SJF
+ + RR
+ + PS
+ + PS con RR
+ + MQS
+ + MFQS
+-------------------
+2. Archivo de Texto (.txt)
+ + PREGUNTAR SOBRE ARCHIVO
+
+ + Algoritmo de Calendarización (FCFS, SJF, RR, PS, PS con RR, MQS, MFQS)
+ + Modo de Operación (Expropiativo y No Exproviativo)
+ + # de Procesos (5-25)
+ + Tiempo de llegada (entero)
+ + Cantidad de trabajo (unidad de trabajo)
+ + Tamaño del quantum (Exproviativo) o cantidad de trabajo (No Exprovativo)
+-------------------
+3. Intercambio de Procesos
+ + Actualiza avance.
+ + Mostrar resultados.
+-------------------
+4. Serie de Taylor
+ + 2arcsin(1), esto es pi
+ + Unidad de trabajo = 50 términos de la serie.
+ + Manejar el trabajo avanzado.
+-------------------
+5. Interfaz
+ + Barra con el porcentaje de trabajo
+ + Proceso activo
+ + Avance, Nombre y Aproximación de PI acumulada para cada proceso
+ + Algoritmo utilizado
+ + Modo de Operación utilizado
+ + Tamaño quantum/trabajo
