@@ -20,14 +20,7 @@ double arctan(int n){
 }
 
 int main(int argc, char *argv[]) {
-  struct Elong res;
-  res.numero[0] = 1;
-  res.largo = 1;
-  elong_factorial(100, &res);
-  elong_print(&res);
-  return 0;
-
-  /*GtkApplication *app;
+  GtkApplication *app;
   int status;
 
   app = gtk_application_new ("org.gtk.example", G_APPLICATION_FLAGS_NONE);
@@ -35,5 +28,5 @@ int main(int argc, char *argv[]) {
   status = g_application_run(G_APPLICATION (app), argc, argv);
   g_object_unref (app);
 
-  return status;*/
+  return status;
 }

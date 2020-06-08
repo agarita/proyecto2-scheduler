@@ -3,8 +3,7 @@
 
 #include <gtk/gtk.h>
 #include <stdio.h>
-
-#include "elargo.h"
+#include <gmp.h>
 
 static void activate(GtkApplication* app, gpointer user_data);
 
