@@ -1,6 +1,41 @@
-Algoritmo de Calendarización
+FCFS | SJF | RR
 Modo de Operación
 Quantum / Trabajo a realizar
+
+Tiempo de llegada de Proceso | Cantidad de Trabajo
+Tiempo de llegada de Proceso | Cantidad de Trabajo
+Tiempo de llegada de Proceso | Cantidad de Trabajo
+Tiempo de llegada de Proceso | Cantidad de Trabajo
+
+--------------------------------------------------------------------------------
+PS | PS con RR
+Modo de Operación
+Quantum / Trabajo a realizar
+
+Tiempo de llegada de Proceso | Cantidad de Trabajo | Prioridad
+Tiempo de llegada de Proceso | Cantidad de Trabajo | Prioridad
+Tiempo de llegada de Proceso | Cantidad de Trabajo | Prioridad
+Tiempo de llegada de Proceso | Cantidad de Trabajo | Prioridad
+
+--------------------------------------------------------------------------------
+MQS
+Modo de Operación
+Algoritmo | Quantum/Trabajo a Realizar
+Algoritmo | Quantum/Trabajo a Realizar
+Algoritmo | Quantum/Trabajo a Realizar
+Algoritmo | Quantum/Trabajo a Realizar
+
+Tiempo de llegada de Proceso | Cantidad de Trabajo | Prioridad
+Tiempo de llegada de Proceso | Cantidad de Trabajo | Prioridad
+Tiempo de llegada de Proceso | Cantidad de Trabajo | Prioridad
+Tiempo de llegada de Proceso | Cantidad de Trabajo | Prioridad
+
+--------------------------------------------------------------------------------
+MFQS
+Algoritmo | Modo de Operación | Quantum/Trabajo a Realizar
+Algoritmo | Modo de Operación | Quantum/Trabajo a Realizar
+Algoritmo | Modo de Operación | Quantum/Trabajo a Realizar
+Algoritmo | Modo de Operación | Quantum/Trabajo a Realizar
 
 Tiempo de llegada de Proceso | Cantidad de Trabajo
 Tiempo de llegada de Proceso | Cantidad de Trabajo

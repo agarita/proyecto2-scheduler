@@ -1,28 +1,20 @@
-
-/*
-double arcsin (int n){
-  double sum = 0.0;
-  addend = 1.0;
-
-  for(int i = 0; i < n; i++){
-    addend = (2*i)/(4);
-    sum = addend;
-  }
-
-  return sum;
+PCB{
+  PID
+  Cantidad de terminos totales
+  Cantidad de terminos actuales
+  Aproximación de pi
 }
-*/
-//An aproximation with the Talor Series of 4arctan(1). It's a lot less intensive than 2arcsin(1), but it's not what we're looking for.
-//Negating a number: https://stackoverflow.com/questions/15111466/fastest-way-to-negate-a-number
-//4arctan(1) in C: https://stackoverflow.com/questions/43702289/calculating-pi-using-the-taylor-series-c
-double arctan (int n){
-  double sum = 0.0;
-  int sign = 1;
 
-  for (int i = 0; i < n; i++){
-    sum += sign / (2.0*i+1.0);
-    sign = -sign;
+TIMER
+
+TS(Aproximación de pi, cantidad de terminos ){
+
+}
+
+while(){
+  if(wait(TRABAJO_A_REALIZAR/Quantum) || trabajoCompletado){
+      /*
+      * Ejecuta Algoritmo de Calendarización
+      */
   }
-
-  return 4*sum;
 }

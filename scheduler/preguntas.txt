@@ -1,0 +1,11 @@
+Buenas noches profesor,
+Estamos trabajando en el segundo proyecto y tenemos varias dudas. Tenemos
+confusión sobre como implementar los archivos de texto cuando el tipo de algoritmo
+es PS, MQS o MFQS. Pensabamos implementar distintas configuraciones de archivo para
+cada algoritmo, adjuntamos un txt con las configuraciones que definimos, ¿Este enfoque
+es correcto o debemos realizar algún cambio?
+Si es posible, nos puede responder por este medio. Si no queda clara nuestra duda o
+desea darnos una respuesta más amplia podemos agendar una reunión.
+Saludos,
+Alejandro Garita
+2016094679
