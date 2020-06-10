@@ -9,6 +9,6 @@
 
 static void activate(GtkApplication* app, gpointer user_data);
 
-void arcsin(int n);
+void arcsin(unsigned int start, unsigned int finish);
 
 #endif

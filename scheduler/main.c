@@ -1,6 +1,11 @@
 #include "main.h"
 
 /*--------
+  GLOBAL
+--------*/
+mpfr_t state;
+
+/*--------
  INTERFAZ
 --------*/
 static void activate (GtkApplication* app, gpointer user_data){
@@ -15,7 +20,16 @@ static void activate (GtkApplication* app, gpointer user_data){
 /*-------------
  TAYLOR SERIES
 -------------*/
-void arcsin(int n){
+void arcsin(unsigned int start, unsigned int finish){
+  if(start == 0 || finish == 0){
+    printf("Los argumentos de esta función deben ser enteros mayores a 0\n");
+    return;
+  }
+  if(finish < start){
+    printf("El argumento finish debe ser mayor al argumento start.\n");
+    return;
+  }
+
   mpfr_t res; // arcsin(1)
   mpfr_t pi;  // 2*res
 
@@ -30,21 +44,21 @@ void arcsin(int n){
 
   mpfr_inits2 (256, res, pi, u, a, b, c, d, t, (mpfr_ptr) 0);
 
-  mpfr_set_d (res, 1.0, MPFR_RNDD); mpfr_set_d (pi, 1.0, MPFR_RNDD);
+  mpfr_set (res, state, MPFR_RNDD); mpfr_set_d (pi, 1.0, MPFR_RNDD);
 
   mpfr_set_d (a, 1.0, MPFR_RNDD); mpfr_set_d (b, 1.0, MPFR_RNDD);
   mpfr_set_d (c, 1.0, MPFR_RNDD); mpfr_set_d (d, 1.0, MPFR_RNDD);
   mpfr_set_d (u, 1.0, MPFR_RNDD); mpfr_set_d (t, 1.0, MPFR_RNDD);
 
-  for (n = 1; n <= 50*n; n++){
-    for(int i = 1; i <= 2*n; i++){
+  for (unsigned int n = start; n <= finish; n++){
+    for(unsigned int i = 1; i <= 2*n; i++){
       mpfr_mul_ui (u, u, i, MPFR_RNDU); // (2n)!
     }
     //----------------------------------
     mpfr_mul_ui (a, a, 4, MPFR_RNDD);
     mpfr_pow_ui (a, a, n, MPFR_RNDD);   // 4^n
     //**********************************
-    for(int i = 1; i <= n; i++){
+    for(unsigned int i = 1; i <= n; i++){
       mpfr_mul_ui (b, b, i, MPFR_RNDU); // n!
     }
     mpfr_pow_ui (b, b, 2, MPFR_RNDD);   // b^2
@@ -58,9 +72,10 @@ void arcsin(int n){
     mpfr_div (t, u, d, MPFR_RNDD);
 
     mpfr_add (res, res, t, MPFR_RNDD);
+    mpfr_set (state, res, MPFR_RNDD);
     mpfr_mul_ui (pi, res, 2, MPFR_RNDD);
 
-    printf("PI = ~");
+    printf("Suma %u de 2arcsin(1) ~ ", n);
     mpfr_out_str (stdout, 10, 0, pi, MPFR_RNDD);
     putchar('\n');
 
@@ -68,8 +83,7 @@ void arcsin(int n){
     mpfr_set_d (c, 1.0, MPFR_RNDD); mpfr_set_d (d, 1.0, MPFR_RNDD);
     mpfr_set_d (u, 1.0, MPFR_RNDD); mpfr_set_d (t, 1.0, MPFR_RNDD);
   }
-
-  mpfr_clears (res, a, b, c, u, d, t, (mpfr_ptr) 0);
+  mpfr_clears (res, pi, a, b, c, u, d, t, (mpfr_ptr) 0);
   mpfr_free_cache ();
 }
 
@@ -77,7 +91,27 @@ void arcsin(int n){
      MAIN
 -------------*/
 int main(int argc, char *argv[]) {
-  arcsin(3);
+  mpfr_t pi;
+
+  mpfr_init2(pi, 256);
+  mpfr_init2(state, 256);
+
+  mpfr_set_d(state, 1.0, MPFR_RNDD);
+
+  arcsin(1, 500);
+  printf("APROXIMACION 1 = ");
+  mpfr_mul_ui(pi, state, 2, MPFR_RNDD);
+  mpfr_out_str (stdout, 10, 0, pi, MPFR_RNDD);
+  putchar('\n');
+
+  arcsin(501, 511);
+  printf("APROXIMACION 2 = ");
+  mpfr_mul_ui(pi, state, 2, MPFR_RNDD);
+  mpfr_out_str (stdout, 10, 0, pi, MPFR_RNDD);
+  putchar('\n');
+
+  mpfr_clear(pi);
+  mpfr_clear(state);
   return 0;
 
   /*GtkApplication *app;
