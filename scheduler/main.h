@@ -7,8 +7,49 @@
 #include <mpfr.h>
 #include <gmp.h>
 
+#define WORK_FOR_CICLE 50
+#define NULL 0
+
+void load_configuration(struct process_list * process_list, char * file);
+
+struct process { //Guarda la informacion de un proceso
+    int id,arrival_time,work_load,priority,work_done; //# de proceso, tiempo de llegada, cantidad de trabajo asignado, prioridad,cantidad de trabajo realizado
+    mpfr_t *state; //Resultado actual del proceso
+};
+struct process* initialize_process(int id, int arrival_time, int work_load, int priority);
+void save_process_state(struct process* process); //Guarda el estado del proceso cuando se retira de ejecucion
+void load_process_state(struct process* process); //Carga el estado del proceso cuando se le asigna tiempo de ejecucion
+int is_finished(struct process* process); //Dice si un proceso ha terminado
+void calculate_process_work_load(struct process* process); //Cualcula la cantidad de trabajo a realizar, cuando se le asigna un tiempo de ejecucion 
+
+struct node { //Nodos de las listas
+    struct process* process; //Guarda la direccion de un proceso
+    struct node* next; //Guarda la direccion del nodo siguiente en la lista
+};
+struct node* initialize_node (struct process* process); //Inicializa un nodo
+struct process* get_process (struct node* node);//Recupera el proceso de un nodo
+
+
+struct process_list { //Lista con procesos
+    struct node* first_process;
+};
+struct process_list* initialize_process_list();
+int is_list_empty(struct process_list* process_list); //Dice si la lista es vacia
+void add_process(struct process_list* process_list, struct process* process); //Agrega un proceso a la lista
+void process_arrival(struct process_list* process_list, struct scheduler* scheduler, int time); //Agrega los procesos al scheduler en su tiempo de llegada
+
+struct scheduler { //Cola de processos en ready
+    struct node* first_process; //Guarda la direccion del primer nodo de la lista
+    int algorithm,type; //Algoritmo de la cola y tipo
+};
+struct scheduler* initialize_scheduler();
+void add_process_to_scheduler(struct scheduler * scheduler,struct process * process); //Determina que algoritmo utilizar para agregar un proceso a la cola del scheduler
+struct process* next_process(struct scheduler * scheduler); //Saca el siguiente processo que entra a ejecucion de la cola del scheduler
+int is_sheduler_empty(struct scheduler * scheduler); //Dice si la cola del scheduler esta vacia
+
 static void activate(GtkApplication* app, gpointer user_data);
 
 void arcsin(unsigned int start, unsigned int finish);
 
 #endif
+

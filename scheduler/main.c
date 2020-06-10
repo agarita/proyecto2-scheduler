@@ -4,6 +4,7 @@
   GLOBAL
 --------*/
 mpfr_t state;
+int time; //Lleva la cuenta de los ciclos realizados
 
 /*--------
  INTERFAZ
@@ -87,10 +88,147 @@ void arcsin(unsigned int start, unsigned int finish){
   mpfr_free_cache ();
 }
 
+/*-------------------------------------
+        MANEJO DE ESTRUCTURAS
+-------------------------------------*/
+struct process* initialize_process(int id, int arrival_time, int work_load, int priority) {
+  struct process * new_process;
+  new_process = malloc(sizeof(struct process));
+  new_process->id = id;
+  new_process->arrival_time = arrival_time;
+  new_process->work_load = work_load;
+  new_process->priority = priority;
+  new_process->work_done = 0;
+  mpfr_t state;
+  mpfr_init2(state, 256);
+  mpfr_set_d(state, 1.0, MPFR_RNDD);
+  new_process->state = &state;
+  return new_process;
+};
+
+struct node * initialize_node (struct process* process) {
+  struct node* new_node;
+  new_node = malloc(sizeof(struct node));
+  new_node->process = process;
+  new_node->next = NULL;
+  return new_node;
+};
+
+struct process_list* initialize_process_list() {
+  struct process_list* new_process_list;
+  new_process_list = malloc(sizeof(struct process_list));
+  new_process_list->first_process = NULL;
+  return new_process_list;
+};
+
+struct scheduler* initialize_scheduler() {
+  struct scheduler* new_scheduler;
+  new_scheduler = malloc(sizeof(struct scheduler));
+  new_scheduler->algorithm = 0;
+  new_scheduler->first_process = NULL;
+  new_scheduler->type = 0;
+  return new_scheduler;
+};
+
+int is_list_empty(struct process_list* process_list) {
+  if( process_list == NULL )
+    return 1;
+  return 0;
+};
+
+int is_sheduler_empty(struct scheduler * scheduler) {
+  if (scheduler->first_process == NULL)
+    return 1;
+  return 0;
+};
+
+void add_process(struct process_list* process_list,struct process* process) {
+  struct node * new_node, * tmp_node;
+  new_node = initialize_node(process);
+
+  if (is_list_empty(process_list)){
+    process_list->first_process = new_node;
+  };
+  tmp_node = process_list->first_process;
+  while(tmp_node->next != NULL) {
+    tmp_node = tmp_node->next;
+  }
+  tmp_node->next = new_node;
+};
+/*
+struct process* get_process(struct node* process_list,int index) {
+  
+  if (is_list_empty(process_list)){
+    return NULL;
+  };
+
+  int process_number = 0;
+  struct node* tmp_node = process_list->first_process;
+
+}*/
+
+void process_arrival(struct process_list* process_list, struct scheduler* scheduler, int time) {
+  
+  if (is_list_empty(process_list))
+    return;
+  
+  struct node* tmp_node,* next_node;
+  struct process* tmp_process;
+  tmp_node = process_list->first_process;
+  
+  while(tmp_node!=NULL) {
+    if(tmp_node->process->arrival_time == time) {
+      tmp_process = tmp_node->process;
+      add_process_to_scheduler(scheduler,tmp_process);
+      next_node = tmp_node->next;
+      free(tmp_node);
+      tmp_node = next_node;
+    } else break;
+  };
+  if (is_list_empty(process_list))
+    return;
+  
+  while( tmp_node->next != NULL) {
+    if(tmp_node->next->process->arrival_time == time){
+      tmp_process = tmp_node->next->process;
+      add_process_to_scheduler(scheduler,tmp_process);
+      next_node = tmp_node->next->next;
+      free(tmp_node->next);
+      tmp_node->next = next_node;
+    };
+  };
+};
+
+struct process* next_process(struct scheduler * scheduler) {
+  struct process* tmp_process;
+  struct node* tmp_node;
+  tmp_node = scheduler->first_process;
+  tmp_process = tmp_node->process;
+  scheduler->first_process = tmp_node->next;
+  free(tmp_node);
+  return tmp_process;
+};
+
+void add_process_to_scheduler(struct scheduler * scheduler,struct process * process) { //Esto es provicional, aqui decide que algoritmo usar para agregar a la cola
+  struct node * new_node, * tmp_node;
+  new_node = initialize_node(process);
+
+  if (is_scheduler_empty(scheduler)){
+    scheduler->first_process = new_node;
+  };
+  tmp_node = scheduler->first_process;
+  while(tmp_node->next != NULL) {
+    tmp_node = tmp_node->next;
+  }
+  tmp_node->next = new_node;
+};
+
+
 /*-------------
      MAIN
 -------------*/
 int main(int argc, char *argv[]) {
+  time = 0; // inicia en el ciclo 0
   mpfr_t pi;
 
   mpfr_init2(pi, 256);

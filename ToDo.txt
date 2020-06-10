@@ -8,6 +8,7 @@ To-Do
  + PS con RR
  + MQS
  + MFQS
+
 -------------------
 2. Archivo de Texto (.txt)
  + PREGUNTAR SOBRE ARCHIVO
@@ -18,15 +19,18 @@ To-Do
  + Tiempo de llegada (entero)
  + Cantidad de trabajo (unidad de trabajo)
  + Tamaño del quantum (Exproviativo) o cantidad de trabajo (No Exprovativo)
+
 -------------------
 3. Intercambio de Procesos
  + Actualiza avance.
  + Mostrar resultados.
+
 -------------------
 4. Serie de Taylor
  + 2arcsin(1), esto es pi
  + Unidad de trabajo = 50 términos de la serie.
  + Manejar el trabajo avanzado.
+ 
 -------------------
 5. Interfaz
  + Barra con el porcentaje de trabajo
@@ -35,3 +39,33 @@ To-Do
  + Algoritmo utilizado
  + Modo de Operación utilizado
  + Tamaño quantum/trabajo
+
+
+struct process
+    ID
+    Carga de trabajo = ?
+    Trabajo realizado = 0
+    Prioridad = ?
+    state
+    
+save_state(process)
+load_state(process)
+finished(process)
+calcular_carga(process,quantum,carga) //ciclos asignados, variable para guardar el resultado
+
+struct queue
+    id_first_node
+    algoritmo //Algoritmo que utiliza el add para mantener la cola ordenada
+    tipo //expropiativo o no expropiativo
+
+pop_node(queque) //saca primer elemento de la cola
+add_node(queue,node) #agrega un proceso a la cola segun el algoritmo
+is_empty_queue(queue) #esta vacia la lista
+    
+struct node
+    id_node
+    id_process
+    id_nodo_siguiente
+
+
+load_configuration(process_list,file)
