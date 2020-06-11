@@ -1,10 +1,60 @@
-FCFS | SJF | RR | PS | PS con RR | MQS | MFQS
+1. FCFS | SJF | RR | PS | PS con RR | MQS | MFQS
+
+//si MFQS
+2. cantidad de colas
+3. FCFS | SJF | RR | PS | PS con RR | MQS | MFQS
+...
+3+cantidad de colas. FCFS | SJF | RR | PS | PS con RR | MQS | MFQS
+
 EXPROPIATIVO | NO_EXPROPIATIVO
 q / tr
 
+//si EXPROPIATIVO
 t | ct | p
+
+//si NO_EXPROPIATIVO
 t | ct | p
-t | ct | p
-t | ct | p
-t | ct | p
+
 ...
+
+A = FCFS | SJF | RR | PS | PS con RR | MQS | MFQS
+M = EXPROPIATIVO | NO_EXPROPIATIVO
+Q = quantum
+TR = trabajo a realizar voluntariamente
+P = prioridad
+T = tiempo de llegada
+CT = cantidad de trabajo asignado
+N = Cantidad de colas
+
+P = T | CT | [ P ] 
+
+=============================================================
+Caso en que A = FCFS | SJF | RR | PS | PS con RR | MQS
+
+1. A | [ M ] | Q/TR 
+2. 
+3. P
+4. P
+5. P
+6. P
+7. P
+...
+27. P
+
+=============================================================
+Caso en que A = MFQS
+
+1. A | [ M ] | Q/TR 
+2. N
+3. A | [ M ] | Q/TR 
+4. A | [ M ] | Q/TR 
+...
+3+N. A | [ M ] | Q/TR 
+...
+x. P
+x+1. P
+x+2. P
+x+3. P
+x+4. P
+...
+x+25. P

@@ -3,11 +3,11 @@
 /*--------
   GLOBAL
 --------*/
-struct process_list* process_list; //Lista con los procesos
-struct scheduler* scheduler; //Cola de procesos para el uso del cpu
-struct process* actual_process;
+struct process_list_t* process_list; //Lista con los procesos
+struct scheduler_t* scheduler; //Cola de procesos para el uso del cpu
+struct process_t* actual_process;
 mpfr_t state;
-int time; //Lleva la cuenta de los ciclos realizados
+int time,work_done; //Lleva la cuenta de los ciclos realizados
 
 /*--------
  INTERFAZ
@@ -94,28 +94,35 @@ void arcsin(unsigned int start, unsigned int finish){
 /*-------------------------------------
         MANEJO DE ESTRUCTURAS
 -------------------------------------*/
-struct process* initialize_process(int id, int arrival_time, int work_load, int priority) {
-  struct process * new_process;
-  new_process = malloc(sizeof(struct process));
+struct process_t* initialize_process(int id, int arrival_time, int work_load, int priority) {
+
+  mpfr_t state,pi;
+  struct process_t * new_process;
+  new_process = malloc(sizeof(struct process_t));
   if (new_process == NULL) {
     printf("Error allocating memory for process.");
     exit(1);
   }
+
+  mpfr_init2(state, 256);
+  mpfr_init2(pi, 256);
+  mpfr_set_d(state, 1.0, MPFR_RNDD);
+  mpfr_set_d(pi, 1.0, MPFR_RNDD);
   new_process->id = id;
   new_process->arrival_time = arrival_time;
   new_process->work_load = work_load;
   new_process->priority = priority;
   new_process->work_done = 0;
-  mpfr_t state;
-  mpfr_init2(state, 256);
-  mpfr_set_d(state, 1.0, MPFR_RNDD);
+  new_process->work_progress = 0;
+  new_process->last_queue = 0;
   new_process->state = &state;
+  new_process->pi = &pi;
   return new_process;
 };
 
-struct node * initialize_node (struct process* process) {
-  struct node* new_node;
-  new_node = malloc(sizeof(struct node));
+struct node_t * initialize_node (struct process_t* process) {
+  struct node_t* new_node;
+  new_node = malloc(sizeof(struct node_t));
   if (new_node == NULL) {
     printf("Error allocating memory for node.");
     exit(1);
@@ -125,9 +132,9 @@ struct node * initialize_node (struct process* process) {
   return new_node;
 };
 
-struct process_list* initialize_process_list() {
-  struct process_list* new_process_list;
-  new_process_list = malloc(sizeof(struct process_list));
+struct process_list_t* initialize_process_list() {
+  struct process_list_t* new_process_list;
+  new_process_list = malloc(sizeof(struct process_list_t));
   if (new_process_list == NULL) {
     printf("Error allocating memory for process list.");
     exit(1);
@@ -136,37 +143,87 @@ struct process_list* initialize_process_list() {
   return new_process_list;
 };
 
-struct scheduler* initialize_scheduler() {
-  struct scheduler* new_scheduler;
-  new_scheduler = malloc(sizeof(struct scheduler));
+struct scheduler_t* initialize_scheduler() {
+  struct scheduler_t* new_scheduler;
+  new_scheduler = malloc(sizeof(struct scheduler_t));
   if (new_scheduler == NULL) {
     printf("Error allocating memory for process scheduler.");
     exit(1);
   }
   new_scheduler->algorithm = NULL;
-  new_scheduler->first_process = NULL;
+  new_scheduler->process_list = NULL;
   new_scheduler->type = NULL;
+  new_scheduler->queue_list = NULL;
+  new_scheduler->quantum = 0;
   return new_scheduler;
 };
 
-int is_list_empty(struct process_list* process_list) {
-  if( process_list == NULL )
+struct queue_list_t* initialize_queue_list () {
+  struct queue_list_t* new_queue_list;
+  new_queue_list = malloc(sizeof(struct queue_list_t));
+  if (new_queue_list == NULL) {
+    printf("Error allocating memory for queue list.");
+    exit(1);
+  }
+  new_queue_list->first_queue = NULL;
+  return new_queue_list;
+};
+
+struct queue_node_t* initialize_queue_node (int id) {
+  struct queue_node_t* new_queue_node;
+  new_queue_node = malloc(sizeof(struct queue_node_t));
+  if (new_queue_node == NULL) {
+    printf("Error allocating memory for queue node.");
+    exit(1);
+  }
+  new_queue_node->id = id;
+  new_queue_node->next = NULL;
+  new_queue_node->scheduler = NULL;
+  return new_queue_node;
+};
+
+void add_queue_list (struct queue_list_t* queue_list, struct scheduler_t* new_scheduler, int id) {
+  struct queue_node_t* new_node, * tmp_node;
+  new_node = initialize_queue_node(id);
+  new_node->id = id;
+  new_node->next = NULL;
+  new_node->scheduler = new_scheduler;
+  if (is_queue_list_empty(queue_list)) {
+    queue_list->first_queue = new_node;
+  };
+  tmp_node = queue_list->first_queue;
+  while(tmp_node->next != NULL) {
+    tmp_node = tmp_node->next;
+  }
+  tmp_node->next = new_node;
+};
+
+int is_queue_list_empty (struct queue_list_t* queue_list) {
+  if (queue_list->first_queue == NULL)
+    return 1;
+  return 0;
+}; //Dice si la lista de colas esta vacia
+
+
+int is_list_empty(struct process_list_t* process_list) {
+  if( process_list->first_process == NULL )
     return 1;
   return 0;
 };
 
-int is_scheduler_empty(struct scheduler * scheduler) {
-  if (scheduler->first_process == NULL)
+int is_scheduler_empty(struct scheduler_t * scheduler) {
+  if (scheduler->process_list == NULL)
     return 1;
   return 0;
 };
 
-void add_process(struct process_list* process_list,struct process* process) {
-  struct node * new_node, * tmp_node;
+void add_process(struct process_list_t* process_list,struct process_t* process) {
+  struct node_t * new_node, * tmp_node;
   new_node = initialize_node(process);
 
   if (is_list_empty(process_list)){
     process_list->first_process = new_node;
+    return;
   };
   tmp_node = process_list->first_process;
   while(tmp_node->next != NULL) {
@@ -175,36 +232,37 @@ void add_process(struct process_list* process_list,struct process* process) {
   tmp_node->next = new_node;
 };
 /*
-struct process* get_process(struct node* process_list,int index) {
+struct process_t* get_process(struct node_t* process_list,int index) {
   
   if (is_list_empty(process_list)){
     return NULL;
   };
 
   int process_number = 0;
-  struct node* tmp_node = process_list->first_process;
+  struct node_t* tmp_node = process_list->first_process;
 
 }*/
-void save_process_state(struct process* process, mpfr_t state, int work_progress) {
+void save_process_state(struct process_t* process, mpfr_t state, int work_done) {
   process->state = state;
-  process->work_done = process->work_done + work_progress;
+  process->work_done = work_done;
 };
 
-void load_process_state(struct process* process, mpfr_t* state) {
+void load_process_state(struct process_t* process, mpfr_t* state, int * work_done) {
   state = process->state;
+  work_done = process->work_done;
 };
 
-int is_finished(struct process* process) {
+int is_finished(struct process_t* process) {
   return (process->work_load == process->work_done);
 };
 
-void process_arrival(struct process_list* process_list, struct scheduler* scheduler, int time) {
+void process_arrival(struct process_list_t* process_list, struct scheduler_t* scheduler, int time) {
   
   if (is_list_empty(process_list))
     return;
   
-  struct node* tmp_node,* next_node;
-  struct process* tmp_process;
+  struct node_t* tmp_node,* next_node;
+  struct process_t* tmp_process;
   tmp_node = process_list->first_process;
   
   while(tmp_node!=NULL) {
@@ -230,31 +288,46 @@ void process_arrival(struct process_list* process_list, struct scheduler* schedu
   };
 };
 
-struct process* next_process(struct scheduler * scheduler) {
-  struct process* tmp_process;
-  struct node* tmp_node;
-  tmp_node = scheduler->first_process;
+struct process_t* next_process(struct process_list_t * process_list) {
+  struct process_t* tmp_process;
+  struct node_t* tmp_node;
+  tmp_node = process_list->first_process;
   tmp_process = tmp_node->process;
-  scheduler->first_process = tmp_node->next;
+  process_list->first_process = tmp_node->next;
   free(tmp_node);
   return tmp_process;
 };
 
-void add_process_to_scheduler(struct scheduler * scheduler,struct process * process) { //Esto es provicional, aqui decide que algoritmo usar para agregar a la cola
-  struct node * new_node, * tmp_node;
+void add_process_to_scheduler(struct scheduler_t * scheduler,struct process_t * process) { //Esto es provicional, aqui decide que algoritmo usar para agregar a la cola
+  struct node_t * new_node, * tmp_node;
   new_node = initialize_node(process);
 
   if (is_scheduler_empty(scheduler)){
-    scheduler->first_process = new_node;
+    scheduler->process_list->first_process = new_node;
   };
-  tmp_node = scheduler->first_process;
+  /* Seleccionar el algoritmo y llamar la funcion
+  if (scheduler->algorithm == FCFS) {
+
+  };
+  */
+  tmp_node = scheduler->process_list->first_process;
   while(tmp_node->next != NULL) {
     tmp_node = tmp_node->next;
   }
   tmp_node->next = new_node;
 };
 
-int load_configuration_and_process(struct scheduler * scheduler, struct process_list * process_list, char * file) { //Lee el archivo de configuracion y carga la configuracion y los procesos correspondientes.
+// esto casi que hay que cambiarlo, porque segun lo que dijo el profe es necesario hacer el MFQS dinamicamente.
+// Una solucion sencilla que encontre es por linea del archivo de texto escribir
+// "algoritmo modo quantom/carga" //inf del scheduler
+// "0 1 2" // inf del proceso
+// Entonces procesar por linea, se lee una linea del archivo y se utiliza sscanf() para sacar los terminos,
+//al sscanf() le puedo decir que agarre 3 (o los que quiera) valores del string del formato que le diga.
+//Entonces es facil solo agarrar el string "algoritmo modo quantom/carga" y decirle sscanf %s,%s,%s con 3 variables y lo jala.
+//EN config_template.txt hay una aproximacion del formato del txt con la configuracion
+//Si la cola es MFQS, espera un N, con la cantidad de colas del algoritmo.
+// SERIA BUENO PONER LA CANTIDAD DE PROCESOS QUE ENTRAN? creo que es indiferente.
+int load_configuration_and_process(struct scheduler_t * scheduler, struct process_list_t * process_list, char * file) { //Lee el archivo de configuracion y carga la configuracion y los procesos correspondientes.
   //Verifica que el archivo sea correcto. Si todo se ejecuta correctamente devuelve 0.
   //Sino, devuelve 1 si hay un error abriendo el archivo.
   //2 si el archivo no tiene el formato correcto
@@ -350,7 +423,7 @@ int load_configuration_and_process(struct scheduler * scheduler, struct process_
       };
     };
 
-    struct process* new_process;
+    struct process_t* new_process;
     new_process = initialize_process(number_of_process,arrival_time,work_load,priority);
     add_process(process_list,new_process);
     number_of_process++;
@@ -398,13 +471,71 @@ enum scheduler_type_t get_scheduler_type (char * type_s) {
     return NULL;
   };
 };
+/*---------------------------------------
+     Algoritmos de calendarizacion
+---------------------------------------*/
+
+void FCFS(struct process_list_t* process_list, struct process_t * process) {
+  add_process(process_list,process);
+};
+void SJF(struct process_list_t* process_list, struct process_t * process) {
+  struct node_t * new_node, * tmp_node;
+  new_node = initialize_node(process);
+
+  if (is_list_empty(process_list)){
+    process_list->first_process = new_node;
+    return;
+  };
+  tmp_node = process_list->first_process;
+  
+  while(tmp_node->next != NULL) {
+    if ( ( process->work_load-process->work_done ) < ( tmp_node->process->work_load-tmp_node->process->work_load ) ) {
+      new_node->next = tmp_node;
+      process_list->first_process = new_node;
+      return;
+    }
+    tmp_node = tmp_node->next;
+  }
+  tmp_node->next = new_node;
+};
+// ME PARECE QUE ESTE NO ES EN SI UN ALGORITMO PARA GUARDAR A LA COLA, SINO QUE USAMOS FCFS, y en el ciclo del CPU, cada vez que se complete el quantum, se saca el proceso del cpu y se mete a la cola, y se coloca el siguiente proceso en cpu.
+void RR(struct process_list_t* process_list, struct process_t * process); //Round Robin. Expropiativo. Cada proceso tiene un quantum asignado para ejecutarse.
+
+void PS(struct process_list_t* process_list, struct process_t * process) {
+  struct node_t * new_node, * tmp_node;
+  new_node = initialize_node(process);
+
+  if (is_list_empty(process_list)){
+    process_list->first_process = new_node;
+    return;
+  };
+  tmp_node = process_list->first_process;
+  
+  while(tmp_node->next != NULL) {
+    if ( process->priority < tmp_node->process->priority ) {
+      new_node->next = tmp_node;
+      process_list->first_process = new_node;
+      return;
+    }
+    tmp_node = tmp_node->next;
+  }
+  tmp_node->next = new_node;
+}; 
+//Este de aqui me parece que funciona igual que el PS, solo que en el ciclo del CPU, cada vez que se complete el quantum, se compara el el proceso actual del cpu con el primero de la cola, si comparten prioridad, se saca el proceso y se mete a la cola, y se coloca el siguiente proceso en cpu, sino continua otra ronda de quantum.
+void PSRR(struct process_list_t* process_list, struct process_t * process); //Priority Scheduling with Round Robin. El proceso entra a la cola delante de los que tengan menor prioridad, en caso de tener la misma prioridad usan round robin.
+
+void MQS(struct process_list_t* process_list, struct process_t * process); //Multilevel Queue. El proceso entra a la cola que corresponda de su prioridad
+void MFQS(struct queue_list_t* queue_list, struct process_t * process); //Multilevel Feedback Queue. El proceso entra a la primera cola, si no termina pasa a la segunda, y sigue. Cuando sale de la ultima y no ha terminado trabajo, regresa a la primera.
+
 /*-------------
      MAIN
 -------------*/
 int main(int argc, char *argv[]) {
+  
   initialize_process_list(process_list); //Se inicializa la lista de procesos
   initialize_scheduler(scheduler); //Se inicializa la cola del scheduler
   time = 0; // inicia en el ciclo 0
+  work_done = 0;
 
   load_configuration_and_process(scheduler,process_list,"path"); //Se carga la configuracion y los procesos
   mpfr_t pi;
@@ -416,12 +547,24 @@ int main(int argc, char *argv[]) {
       //limpiar la memoria reservada
       return 0;
     }
-
     if (is_finished(actual_process)) {
       mpfr_init2(pi, 256);
       mpfr_mul_ui(pi, state, 2, MPFR_RNDD);
-    }
+    };
+    if (1) {
+
+    };
     //falta
+
+
+    if (actual_process->work_load == work_done) {
+      //proceso termino ejecucion
+      mpfr_init2(pi, 256);
+      mpfr_mul_ui(pi, state, 2, MPFR_RNDD);
+      save_process_state(actual_process,pi,work_done);
+      //Decidir si, mandar a una lista de procesos terminados, para poder hacer las estadisticas de ejecucion con el response time, turnaround time, waiting time promedio. Se puede hacer un analisis de cual algoritmo es mejor
+      //o nada mas borrarlo y seguir con los demas.
+    };
   };
 
   mpfr_init2(pi, 256);

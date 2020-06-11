@@ -62,10 +62,29 @@ pop_node(queque) //saca primer elemento de la cola
 add_node(queue,node) #agrega un proceso a la cola segun el algoritmo
 is_empty_queue(queue) #esta vacia la lista
     
-struct node
+struct node node_t
     id_node
     id_process
     id_nodo_siguiente
 
 
 load_configuration(process_list,file)
+
+process simulation
+inicializar todas las variables
+cargar la configuracion y los Procesos
+
+ciclo 
+ingresan procesos nuevos.
+if lista procesos y scheduler == null
+    termina
+
+if processo actual == null
+    escoger proceso nuevo
+else if preemptive
+    saca el proceso actual y lo devuelve a la cola y coloca el siguiente proceso de la cola
+
+    ...realiza proceso...
+
+if proceso termino trabajo
+    escoger nuevo proceso
