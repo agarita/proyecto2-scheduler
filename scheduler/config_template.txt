@@ -1,0 +1,10 @@
+FCFS | SJF | RR | PS | PS con RR | MQS | MFQS
+EXPROPIATIVO | NO_EXPROPIATIVO
+q / tr
+
+t | ct | p
+t | ct | p
+t | ct | p
+t | ct | p
+t | ct | p
+...
