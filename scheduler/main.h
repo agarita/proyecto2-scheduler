@@ -10,7 +10,7 @@
 
 #define MIN_PROCESS 5
 #define MAX_PROCESS 25
-#define WORK_FOR_CICLE 50
+#define WORK_FOR_UNIT 50
 //#define NULL 0
 
 enum scheduling_algorithms_t { FCFS, SJF, RR, PS, PSRR, MQS, MFQS };
@@ -51,8 +51,8 @@ int load_scheduler_MFQS_queues(struct scheduler_t* scheduler,FILE* configuration
 int initialize_scheduler_MQS_queue(struct scheduler_t* scheduler); //Inicializa las colas para el algoritmo MQS. De momento 5 colas. Prioridades entre 1-5
 
 struct process_t* initialize_process(int id, int arrival_time, int work_load, int priority);
-void save_process_state(struct process_t* process, mpfr_ptr state, mpfr_ptr pi, int work_done); //Guarda el estado del proceso cuando se retira de ejecucion
-void load_process_state(struct process_t* process, mpfr_t state, mpfr_t pi, int * work_done); //Carga el estado del proceso cuando se le asigna tiempo de ejecucion
+void save_process_state(struct process_t* process, mpfr_ptr state, int work_done); //Guarda el estado del proceso cuando se retira de ejecucion
+void load_process_state(struct process_t* process, mpfr_t state, int * work_done); //Carga el estado del proceso cuando se le asigna tiempo de ejecucion
 int is_finished(struct process_t* process); //Dice si un proceso ha terminado
 void calculate_process_work_load(struct process_t* process, int* work_load); //Cualcula la cantidad de trabajo a realizar, cuando se le asigna un tiempo de ejecucion
 
@@ -81,8 +81,11 @@ enum scheduler_type_t get_scheduler_type (char * type_s); //Convierte un string 
 
 static void activate(GtkApplication* app, gpointer user_data);
 
+void free_process(struct process_t* process);
+void free_process_list(struct process_list_t * process_list);
+void free_scheduler(struct scheduler_t * scheduler);
 //Funcion que realiza el cpu de arcsin
-void arcsin(unsigned int start, unsigned int finish);
+void arcsin();
 
 //Fuciones con los algoritmos de las colas
 void SJF_A(struct process_list_t* process_list, struct process_t * process); //Shortest Job First. El proceso entra detras de todos los procesos con menor carga de trabajo pendiente
