@@ -7,7 +7,7 @@ struct process_list_t* process_list; //Lista con los procesos
 struct scheduler_t* scheduler; //Cola de procesos para el uso del cpu
 struct process_t* actual_process;
 mpfr_t state;
-int time,work_done; //Lleva la cuenta de los ciclos realizados
+int time,work_done,priority_required; //Lleva la cuenta de los ciclos realizados
 
 /*--------
  INTERFAZ
@@ -204,7 +204,6 @@ int is_queue_list_empty (struct queue_list_t* queue_list) {
   return 0;
 }; //Dice si la lista de colas esta vacia
 
-
 int is_list_empty(struct process_list_t* process_list) {
   if( process_list->first_process == NULL )
     return 1;
@@ -333,74 +332,48 @@ int load_configuration_and_process(struct scheduler_t * scheduler, struct proces
   //2 si el archivo no tiene el formato correcto
 
   FILE *configuration_file;
-  char buffer[32];
+  char buffer[64];
+  char algoritm_entry[20], type_s_entry[20];
   enum scheduling_algorithms_t algorithm;
   enum scheduler_type_t type_s;
   int number_of_process,process_parameters,quantum,arrival_time,work_load,priority;
 
+  quantum = arrival_time = work_load = priority = priority = priority_required = 0;
+
   if ((configuration_file = fopen(file,'r')) == NULL) {
     printf("Error! opening file.");
     return 1;
-  }
+  };
   
   if (fgets(buffer,sizeof(buffer),configuration_file) == NULL) {
     printf("Error! file incomplete missing algorithm.");
     return 2;
   };
-  //proceso algoritmo
-  if (buffer[strlen(buffer)-1] == '\n') {
-    buffer[strlen(buffer)-1] == 0;
-  };
-  
-  algorithm = get_scheduling_algorithm(buffer);
-  if (algorithm == NULL) {
-    print("Error! incorrect algorithm");
-    return 2;
-  };
 
-  if (fgets(buffer,sizeof(buffer),configuration_file) == NULL) {
-    printf("Error! file incomplete missing type.");
-    return 2;
-  };
-  //proceso tipo
-  if (buffer[strlen(buffer)-1] == '\n') {
-    buffer[strlen(buffer)-1] == 0;
-  };
-
-  type_s = get_scheduler_type(buffer);
-  if (type_s == NULL) {
-    print("Error! incorrect scheduler type");
-    return 2;
-  };
-  
-  if (fgets(buffer,sizeof(buffer),configuration_file) == NULL) {
-    printf("Error! file incomplete missing quantum.");
-    return 2;
-  };
-
-  //proceso quantum/cantidad de trabajo
-
-  if (fgets(buffer,sizeof(buffer),configuration_file) == NULL) {
-    printf("Error! file incomplete missing the process.");
-    return 2;
-  };
-
-  if (strcmp(buffer,'\n')) {
-    printf("Error! incorrect file format.");
-    return 2;
-  };
-
-  if ( not (1 == sscanf(buffer, "%*[^0123456789]%d", &quantum))) {
+  if ( not (3 == sscanf(buffer, "%s %s %d", algoritm_entry,type_s_entry, &quantum))) {
         print("Error! incorrect quantum");
         return 2;
   };
-
+  algorithm = get_scheduling_algorithm(algoritm_entry);
+  type_s = get_scheduler_type(type_s_entry);
   scheduler->algorithm = algorithm;
   scheduler->type = type_s;
   scheduler->quantum = quantum;
 
+  if (algorithm == MFQS) {
+    load_scheduler_MFQS_queues(scheduler,configuration_file);
+  };
+  if (fgets(buffer,sizeof(buffer),configuration_file) == NULL) {
+    printf("Error! file incomplete.");
+    return 2;
+  };
+  if ( strcmp(buffer,'\n') != 0) {
+    print("Error! incorrect entry.");
+    return 2;
+  };
+
   number_of_process = 0;
-  if (type_s == PS || type_s == PSRR) {
+  if (type_s == PS || type_s == PSRR || type_s == MQS || priority_required) {
     process_parameters = 3;
   } else {
     process_parameters = 2;
@@ -411,35 +384,84 @@ int load_configuration_and_process(struct scheduler_t * scheduler, struct proces
     int arrival_time,work_load,priority;
 
     if (process_parameters == 2) {
-      if ( not (process_parameters == sscanf(buffer, "%*[^0123456789]%d%*[^0123456789]%d", &arrival_time, &work_load))) {
-        print("Error! incorrect number of process parameters");
+      if ( not (process_parameters == sscanf(buffer, "%d %d", &arrival_time, &work_load))) {
+        print("Error! incorrect entry");
         return 2;
       };
-
     } else {
-      if ( not ( process_parameters == sscanf(buffer, "%*[^0123456789]%d%*[^0123456789]%d%*[^0123456789]%d", &arrival_time, &work_load, &priority))) {
-         print("Error! incorrect number of process parameters");
+      if ( not ( process_parameters == sscanf(buffer, "%d %d% %d", &arrival_time, &work_load, &priority))) {
+         print("Error! incorrect entry");
         return 2;
       };
     };
-
     struct process_t* new_process;
     new_process = initialize_process(number_of_process,arrival_time,work_load,priority);
     add_process(process_list,new_process);
     number_of_process++;
-
   };
-  
+
   if (number_of_process < MIN_PROCESS || number_of_process > MAX_PROCESS) {
     print("Error! not enough process");
     return 2;
   }
 
-
   fclose(configuration_file); 
   return 0;
 };
 
+int load_scheduler_MFQS_queues(struct scheduler_t* scheduler,FILE* configuration_file) {
+  struct queue_list_t* new_queue_list;
+  new_queue_list = initialize_queue_list();
+
+  char buffer[64];
+  char algoritm_entry[20], type_s_entry[20];
+  enum scheduling_algorithms_t algorithm;
+  enum scheduler_type_t type_s;
+  int quantum,number_of_queue,total_queues;
+  quantum = total_queues = 0;
+  number_of_queue = 1;
+
+  if (fgets(buffer,sizeof(buffer),configuration_file) == NULL) {
+    printf("Error! file incomplete.");
+    return 2;
+  };
+
+  if ( not (1 == sscanf(buffer, "%d", &total_queues))) {
+    print("Error! incorrect entry.");
+    return 2;
+  };
+
+  while( (number_of_queue <= total_queues) && (fgets(buffer,sizeof(buffer),configuration_file) == NULL )) {
+    if ( not (3 == sscanf(buffer, "%s %s %d", algoritm_entry,type_s_entry, &quantum))) {
+      print("Error! incorrect entry.");
+      return 2;
+    };
+    
+    algorithm = get_scheduling_algorithm(algoritm_entry);
+    type_s = get_scheduler_type(type_s_entry);
+
+    struct scheduler_t* new_scheduler;
+    new_scheduler = initialize_scheduler();
+    if (algorithm == MFQS) {
+      load_scheduler_MFQS_queues(new_scheduler,configuration_file);
+      if (fgets(buffer,sizeof(buffer),configuration_file) == NULL) {
+        printf("Error! file incomplete.");
+        return 2;
+      };
+      if ( strcmp(buffer,'\n') != 0) {
+        print("Error! incorrect entry.");
+        return 2;
+      };
+    };
+    new_scheduler->algorithm = algorithm;
+    new_scheduler->type = type_s;
+    new_scheduler->quantum = quantum;
+    add_queue_list(new_queue_list,new_scheduler,number_of_queue);
+    number_of_queue++;
+  };
+  scheduler->queue_list = new_queue_list;
+  
+};
 
 enum scheduling_algorithms_t get_scheduling_algorithm (char* algorithm) {
  
@@ -536,6 +558,7 @@ int main(int argc, char *argv[]) {
   initialize_scheduler(scheduler); //Se inicializa la cola del scheduler
   time = 0; // inicia en el ciclo 0
   work_done = 0;
+  actual_process = NULL;
 
   load_configuration_and_process(scheduler,process_list,"path"); //Se carga la configuracion y los procesos
   mpfr_t pi;
@@ -547,23 +570,41 @@ int main(int argc, char *argv[]) {
       //limpiar la memoria reservada
       return 0;
     }
+    if (actual_process == NULL) { //si no hay un proceso ejecutandose
+      //Cargar siguiente proceso
+    };
     if (is_finished(actual_process)) {
       mpfr_init2(pi, 256);
       mpfr_mul_ui(pi, state, 2, MPFR_RNDD);
+      //guardar estado enviar a lista de procesos terminados? definir si hacemos ese metodo
+      //liberar el cpu
+      //continue
     };
-    if (1) {
-
+    if (1) { //si preemtive y termino el timer del quantum
+      //guardar estado del proceso
+      //cargar siguiente proceso
+      //continue
     };
     //falta
 
+    //realizar trabajo arsin()
 
-    if (actual_process->work_load == work_done) {
+    if (1) { //si no preemtive y work_done = quantum(en este caso el quantum contiene la cantidad de trabajo de un proceso antes de liberar el cpu)
+      //guardar estado
+      //liberar cpu
+      //continue
+    };
+
+
+    if (actual_process->work_load == work_done) {//El trabajo realizado es igual a la carga de trabajo
       //proceso termino ejecucion
       mpfr_init2(pi, 256);
       mpfr_mul_ui(pi, state, 2, MPFR_RNDD);
       save_process_state(actual_process,pi,work_done);
       //Decidir si, mandar a una lista de procesos terminados, para poder hacer las estadisticas de ejecucion con el response time, turnaround time, waiting time promedio. Se puede hacer un analisis de cual algoritmo es mejor
       //o nada mas borrarlo y seguir con los demas.
+      //liberar el cpu
+      //continue
     };
   };
 

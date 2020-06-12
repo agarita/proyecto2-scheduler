@@ -16,8 +16,8 @@
 enum scheduling_algorithms_t { FCFS, SJF, RR, PS, PSRR, MQS, MFQS };
 enum scheduler_type_t { PREEMPTIVE, NONPREEMPTIVE };
 
-int load_configuration_and_process(struct scheduler_t * scheduler, struct process_list_t * process_list, char * file); //Carga la informacion del Scheduler. Algoritmo de calendarizacion, tipo, quamtum/cantidad de trabajo, lista de procesos de 5 a 25. Devuelve 0 si se carga la configuracion y los procesos correctamente, sino devuelve 1.
-
+int load_configuration_and_process(struct scheduler_t* scheduler, struct process_list_t * process_list, char * file); //Carga la informacion del Scheduler. Algoritmo de calendarizacion, tipo, quamtum/cantidad de trabajo, lista de procesos de 5 a 25. Devuelve 0 si se carga la configuracion y los procesos correctamente, sino devuelve 1.
+int load_scheduler_MFQS_queues(struct scheduler_t* scheduler,FILE* configuration_file); //Carga los algoritmos de las colas de un scheduler utilizando MFQS del archivo de configuracion.
 
 struct process_t { //Guarda la informacion de un proceso
     int id,arrival_time,work_load,priority,work_done,work_progress,last_queue; //# de proceso, tiempo de llegada, cantidad de trabajo asignado, prioridad,cantidad de trabajo realizado

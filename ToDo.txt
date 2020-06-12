@@ -62,7 +62,7 @@ pop_node(queque) //saca primer elemento de la cola
 add_node(queue,node) #agrega un proceso a la cola segun el algoritmo
 is_empty_queue(queue) #esta vacia la lista
     
-struct node node_t
+struct node
     id_node
     id_process
     id_nodo_siguiente
@@ -88,3 +88,13 @@ else if preemptive
 
 if proceso termino trabajo
     escoger nuevo proceso
+
+
+************************************************************************************
+
+load_scheduler_queues(scheduler,FP)
+recibe N de la cantidad de colas que tiene
+Lee N lineas y para cada linea
+crea la cola y la guarda en la lista de colas
+
+falta hacer get next cuando el algoritmo es MQS y MFQS ya que son multi cola
