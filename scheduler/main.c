@@ -209,6 +209,7 @@ int is_list_empty(struct process_list_t* process_list) {
   return 0;
 };
 
+//ARREGLARLO
 int is_scheduler_empty(struct scheduler_t * scheduler) {
   if (scheduler->process_list == NULL)
     return 1;
@@ -229,17 +230,7 @@ void add_process(struct process_list_t* process_list,struct process_t* process) 
   }
   tmp_node->next = new_node;
 };
-/*
-struct process_t* get_process(struct node_t* process_list,int index) {
-  
-  if (is_list_empty(process_list)){
-    return NULL;
-  };
 
-  int process_number = 0;
-  struct node_t* tmp_node = process_list->first_process;
-
-}*/
 void save_process_state(struct process_t* process, mpfr_t state, int work_done) {
   process->state = state;
   process->work_done = work_done;

@@ -98,3 +98,4 @@ Lee N lineas y para cada linea
 crea la cola y la guarda en la lista de colas
 
 falta hacer get next cuando el algoritmo es MQS y MFQS ya que son multi cola
+falta actualizar save y load process
