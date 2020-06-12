@@ -94,16 +94,15 @@ void arcsin(unsigned int start, unsigned int finish){
 /*-------------------------------------
         MANEJO DE ESTRUCTURAS
 -------------------------------------*/
-struct process_t* initialize_process(int id, int arrival_time, int work_load, int priority) {
+struct process_t* initialize_process(int id, int arrival_time, int work_load, int priority) { //Reserva memoria e inicializa un proceso
 
-  mpfr_t state,pi;
+  mpfr_t state,pi; 
   struct process_t * new_process;
   new_process = malloc(sizeof(struct process_t));
   if (new_process == NULL) {
     printf("Error allocating memory for process.");
     exit(1);
   }
-
   mpfr_init2(state, 256);
   mpfr_init2(pi, 256);
   mpfr_set_d(state, 1.0, MPFR_RNDD);
@@ -287,12 +286,25 @@ void process_arrival(struct process_list_t* process_list, struct scheduler_t* sc
   };
 };
 
-struct process_t* next_process(struct process_list_t * process_list) {
+struct process_t* next_process(struct scheduler_t * scheduler) {
   struct process_t* tmp_process;
   struct node_t* tmp_node;
-  tmp_node = process_list->first_process;
-  tmp_process = tmp_node->process;
-  process_list->first_process = tmp_node->next;
+  struct queue_node_t* tmp_queue_node;
+
+  if (scheduler->algorithm == MQS) {
+    tmp_queue_node = scheduler->queue_list->first_queue;
+    while(tmp_queue_node != NULL){
+
+    };
+
+  } else if (scheduler->algorithm == MFQS) {
+
+  } else {
+    tmp_node = scheduler->process_list->first_process;
+    tmp_process = tmp_node->process;
+    scheduler->process_list->first_process = tmp_node->next;
+  };
+  
   free(tmp_node);
   return tmp_process;
 };
@@ -301,19 +313,19 @@ void add_process_to_scheduler(struct scheduler_t * scheduler,struct process_t * 
   struct node_t * new_node, * tmp_node;
   new_node = initialize_node(process);
 
-  if (is_scheduler_empty(scheduler)){
-    scheduler->process_list->first_process = new_node;
+  // Seleccionar el algoritmo y llamar la funcion
+  if ((scheduler->algorithm == FCFS) || (scheduler->algorithm == RR)) {
+    add_process(scheduler->process_list, process);
+  } else if (scheduler->algorithm == SJF) {
+    SJF(scheduler->process_list,process);
+  } else if ((scheduler->algorithm == PS) || (scheduler->algorithm == PSRR)) {
+    PS(scheduler->process_list,process);
+  } else if (scheduler->algorithm == MQS) {
+    MQS(scheduler->queue_list,process);
+  } else if (scheduler->algorithm == MFQS) {
+    MFQS(scheduler->queue_list,process);
   };
-  /* Seleccionar el algoritmo y llamar la funcion
-  if (scheduler->algorithm == FCFS) {
 
-  };
-  */
-  tmp_node = scheduler->process_list->first_process;
-  while(tmp_node->next != NULL) {
-    tmp_node = tmp_node->next;
-  }
-  tmp_node->next = new_node;
 };
 
 // esto casi que hay que cambiarlo, porque segun lo que dijo el profe es necesario hacer el MFQS dinamicamente.
@@ -362,6 +374,12 @@ int load_configuration_and_process(struct scheduler_t * scheduler, struct proces
 
   if (algorithm == MFQS) {
     load_scheduler_MFQS_queues(scheduler,configuration_file);
+  } else if (algorithm == MQS) {
+    initialize_scheduler_MQS_queue(scheduler);
+  } else {
+    struct process_list_t* new_process_list;
+    new_process_list = initialize_process_list();
+    scheduler->process_list = new_process_list;
   };
   if (fgets(buffer,sizeof(buffer),configuration_file) == NULL) {
     printf("Error! file incomplete.");
@@ -448,10 +466,16 @@ int load_scheduler_MFQS_queues(struct scheduler_t* scheduler,FILE* configuration
         printf("Error! file incomplete.");
         return 2;
       };
-      if ( strcmp(buffer,'\n') != 0) {
+      if ( strcmp(buffer,'\n') != 0) { //WARNING!. Esto puede causar que sea necesario poner doble espacio si se tiene una cola mfqs dentro de una cola mfqs
         print("Error! incorrect entry.");
         return 2;
       };
+    } else if (algorithm == MQS) {
+      initialize_scheduler_MQS_queue(new_scheduler);
+    } else {
+      struct process_list_t* new_process_list;
+      new_process_list = initialize_process_list();
+      new_scheduler->process_list = new_process_list;
     };
     new_scheduler->algorithm = algorithm;
     new_scheduler->type = type_s;
@@ -461,6 +485,18 @@ int load_scheduler_MFQS_queues(struct scheduler_t* scheduler,FILE* configuration
   };
   scheduler->queue_list = new_queue_list;
   
+};
+
+int initialize_scheduler_MQS_queue(struct scheduler_t* scheduler) {
+  struct queue_list_t* new_queue_list;
+  new_queue_list = initialize_queue_list();
+  for(int i=1;i<6;i++) {
+    struct scheduler_t* new_scheduler;
+    new_scheduler = initialize_scheduler();
+
+    add_queue_list(new_queue_list,new_scheduler,i);
+  };
+  scheduler->queue_list = new_queue_list;
 };
 
 enum scheduling_algorithms_t get_scheduling_algorithm (char* algorithm) {
@@ -497,9 +533,6 @@ enum scheduler_type_t get_scheduler_type (char * type_s) {
      Algoritmos de calendarizacion
 ---------------------------------------*/
 
-void FCFS(struct process_list_t* process_list, struct process_t * process) {
-  add_process(process_list,process);
-};
 void SJF(struct process_list_t* process_list, struct process_t * process) {
   struct node_t * new_node, * tmp_node;
   new_node = initialize_node(process);
@@ -521,7 +554,6 @@ void SJF(struct process_list_t* process_list, struct process_t * process) {
   tmp_node->next = new_node;
 };
 // ME PARECE QUE ESTE NO ES EN SI UN ALGORITMO PARA GUARDAR A LA COLA, SINO QUE USAMOS FCFS, y en el ciclo del CPU, cada vez que se complete el quantum, se saca el proceso del cpu y se mete a la cola, y se coloca el siguiente proceso en cpu.
-void RR(struct process_list_t* process_list, struct process_t * process); //Round Robin. Expropiativo. Cada proceso tiene un quantum asignado para ejecutarse.
 
 void PS(struct process_list_t* process_list, struct process_t * process) {
   struct node_t * new_node, * tmp_node;
@@ -532,11 +564,17 @@ void PS(struct process_list_t* process_list, struct process_t * process) {
     return;
   };
   tmp_node = process_list->first_process;
-  
+
+  if ( process->priority < tmp_node->process->priority ) {
+    new_node->next = tmp_node;
+    process_list->first_process = new_node;
+    return;
+  }
+
   while(tmp_node->next != NULL) {
-    if ( process->priority < tmp_node->process->priority ) {
-      new_node->next = tmp_node;
-      process_list->first_process = new_node;
+    if ( process->priority < tmp_node->next->process->priority ) {
+      new_node->next = tmp_node->next;
+      tmp_node->next = new_node;
       return;
     }
     tmp_node = tmp_node->next;
@@ -544,10 +582,41 @@ void PS(struct process_list_t* process_list, struct process_t * process) {
   tmp_node->next = new_node;
 }; 
 //Este de aqui me parece que funciona igual que el PS, solo que en el ciclo del CPU, cada vez que se complete el quantum, se compara el el proceso actual del cpu con el primero de la cola, si comparten prioridad, se saca el proceso y se mete a la cola, y se coloca el siguiente proceso en cpu, sino continua otra ronda de quantum.
-void PSRR(struct process_list_t* process_list, struct process_t * process); //Priority Scheduling with Round Robin. El proceso entra a la cola delante de los que tengan menor prioridad, en caso de tener la misma prioridad usan round robin.
 
-void MQS(struct process_list_t* process_list, struct process_t * process); //Multilevel Queue. El proceso entra a la cola que corresponda de su prioridad
-void MFQS(struct queue_list_t* queue_list, struct process_t * process); //Multilevel Feedback Queue. El proceso entra a la primera cola, si no termina pasa a la segunda, y sigue. Cuando sale de la ultima y no ha terminado trabajo, regresa a la primera.
+void MQS(struct queue_list_t* queue_list, struct process_t * process) {
+  struct queue_node_t * tmp_queue_node;
+  struct node_t * new_node;
+
+  tmp_queue_node = queue_list->first_queue;
+  new_node = initialize_node(process);
+
+  while (tmp_queue_node != NULL) {
+    if (tmp_queue_node->id == process->priority) {
+      add_process(tmp_queue_node->scheduler->process_list,process);
+    };
+    tmp_queue_node = tmp_queue_node->next;
+  };    
+};
+
+void MFQS(struct queue_list_t* queue_list, struct process_t * process) {
+  struct queue_node_t * tmp_queue_node;
+  struct node_t * new_node;
+  int next_queue;
+
+  next_queue = (process->last_queue + 1)% 5;
+  if (not (next_queue) {
+    next_queue = 5;
+  };
+  tmp_queue_node = queue_list->first_queue;
+  new_node = initialize_node(process);
+
+  while (tmp_queue_node != NULL) {
+    if (tmp_queue_node->id == next_queue) {
+      add_process_to_scheduler(tmp_queue_node->scheduler,process);
+    };
+    tmp_queue_node = tmp_queue_node->next;
+  };   
+};
 
 /*-------------
      MAIN

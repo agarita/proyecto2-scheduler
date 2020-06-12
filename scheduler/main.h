@@ -18,6 +18,7 @@ enum scheduler_type_t { PREEMPTIVE, NONPREEMPTIVE };
 
 int load_configuration_and_process(struct scheduler_t* scheduler, struct process_list_t * process_list, char * file); //Carga la informacion del Scheduler. Algoritmo de calendarizacion, tipo, quamtum/cantidad de trabajo, lista de procesos de 5 a 25. Devuelve 0 si se carga la configuracion y los procesos correctamente, sino devuelve 1.
 int load_scheduler_MFQS_queues(struct scheduler_t* scheduler,FILE* configuration_file); //Carga los algoritmos de las colas de un scheduler utilizando MFQS del archivo de configuracion.
+int initialize_scheduler_MQS_queue(struct scheduler_t* scheduler); //Inicializa las colas para el algoritmo MQS. De momento 5 colas. Prioridades entre 1-5
 
 struct process_t { //Guarda la informacion de un proceso
     int id,arrival_time,work_load,priority,work_done,work_progress,last_queue; //# de proceso, tiempo de llegada, cantidad de trabajo asignado, prioridad,cantidad de trabajo realizado
@@ -60,7 +61,7 @@ struct scheduler_t { //Cola de processos en ready
 
 struct scheduler_t* initialize_scheduler(); //Reserva memoria para el scheduler
 void add_process_to_scheduler(struct scheduler_t * scheduler,struct process_t * process); //Determina que algoritmo utilizar para agregar un proceso a la cola del scheduler
-struct process_t* next_process(struct process_list_t * process_list); //Saca el siguiente processo que entra a ejecucion de la cola del scheduler
+struct process_t* next_process(struct scheduler_t * scheduler); //Saca el siguiente processo que entra a ejecucion de la cola del scheduler
 int is_scheduler_empty(struct scheduler_t * scheduler); //Dice si la cola del scheduler esta vacia
 
 struct queue_node_t { //Nodo de las listas de colas
@@ -77,8 +78,8 @@ struct queue_list_t* initialize_queue_list (); //Reserva memoria para una lista 
 void add_queue_list (struct queue_list_t* queue_list, struct scheduler_t* new_scheduler, int id); //Agrega una cola a la lista de colas
 int is_queue_list_empty (struct queue_list_t* queue_list); //Dice si la lista de colas esta vacia
 
-enum scheduling_algorithms_t get_scheduling_algorithm (char* algorithm);
-enum scheduler_type_t get_scheduler_type (char * type_s);
+enum scheduling_algorithms_t get_scheduling_algorithm (char* algorithm); //Convierte un string con el algoritmo en el enum correspondiente
+enum scheduler_type_t get_scheduler_type (char * type_s); //Convierte un string con el tipo de scheduler en el enum correspondiente
 
 static void activate(GtkApplication* app, gpointer user_data);
 
@@ -86,12 +87,9 @@ static void activate(GtkApplication* app, gpointer user_data);
 void arcsin(unsigned int start, unsigned int finish);
 
 //Fuciones con los algoritmos de las colas
-void FCFS(struct process_list_t* process_list, struct process_t * process); //First Come First Served. El primer proceso en entrar a la cola es el primero en salir.
 void SJF(struct process_list_t* process_list, struct process_t * process); //Shortest Job First. El proceso entra detras de todos los procesos con menor carga de trabajo pendiente
-void RR(struct process_list_t* process_list, struct process_t * process); //Round Robin. Expropiativo. Cada proceso tiene un quantum asignado para ejecutarse.
 void PS(struct process_list_t* process_list, struct process_t * process); //Priority Scheduling. El proceso entra a la cola delante de los que tengan menor prioridad, en caso de tener la misma prioridad es FCFS.
-void PSRR(struct process_list_t* process_list, struct process_t * process); //Priority Scheduling with Round Robin. El proceso entra a la cola delante de los que tengan menor prioridad, en caso de tener la misma prioridad usan round robin.
-void MQS(struct process_list_t* process_list, struct process_t * process); //Multilevel Queue. El proceso entra a la cola que corresponda de su prioridad
+void MQS(struct queue_list_t* queue_list, struct process_t * process); //Multilevel Queue. El proceso entra a la cola que corresponda de su prioridad
 void MFQS(struct queue_list_t* queue_list, struct process_t * process); //Multilevel Feedback Queue. El proceso entra a la primera cola, si no termina pasa a la segunda, y sigue. Cuando sale de la ultima y no ha terminado trabajo, regresa a la primera.
 
 #endif
