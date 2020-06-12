@@ -4,6 +4,7 @@ int main(int argc, char *argv[]) {
 
   GtkWidget *window;
   GtkWidget *buttonEjecutar;
+  GtkWidget *buttonReiniciar;
   GtkWidget *halign;
 
   gtk_init(&argc, &argv);
@@ -13,7 +14,7 @@ int main(int argc, char *argv[]) {
   gtk_window_set_title(GTK_WINDOW(window), "Scheduler");
   gtk_window_set_default_size(GTK_WINDOW(window), 600, 400);
   gtk_container_set_border_width(GTK_CONTAINER(window), 15);
-  
+  gtk_widget_show_all(window);
 
   //ComboBox
 
@@ -30,8 +31,8 @@ int main(int argc, char *argv[]) {
   gtk_widget_set_tooltip_text(buttonEjecutar, "Ejecutar algoritmos");
 
   //Reiniciar
-  //button = gtk_button_new_with_label("Reiniciar");
-  //gtk_widget_set_tooltip_text(button, "Reiniciar esta ejecucion");
+  buttonReiniciar = gtk_button_new_with_label("Reiniciar");
+  gtk_widget_set_tooltip_text(buttonReiniciar, "Reiniciar esta ejecucion");
   //Insert
   //button = gtk_button_new_with_label("Insertar");
   //gtk_widget_set_tooltip_text(button, "Insertar lista de algoritmos");
@@ -41,7 +42,9 @@ int main(int argc, char *argv[]) {
 
   //Haling
   halign = gtk_alignment_new(0, 0, 0, 0);
+  
   gtk_container_add(GTK_CONTAINER(halign), buttonEjecutar);
+  gtk_container_add(GTK_CONTAINER(window), buttonReiniciar);
   gtk_container_add(GTK_CONTAINER(window), halign);  
 
   gtk_widget_show_all(window);
