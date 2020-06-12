@@ -51,4 +51,5 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-scheduler/pruebas.c
+schedulerscode/pruebas.c
+.vscode
