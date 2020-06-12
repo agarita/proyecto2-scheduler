@@ -30,7 +30,7 @@ To-Do
  + 2arcsin(1), esto es pi
  + Unidad de trabajo = 50 términos de la serie.
  + Manejar el trabajo avanzado.
- 
+
 -------------------
 5. Interfaz
  + Barra con el porcentaje de trabajo
@@ -47,7 +47,7 @@ struct process
     Trabajo realizado = 0
     Prioridad = ?
     state
-    
+
 save_state(process)
 load_state(process)
 finished(process)
@@ -61,7 +61,7 @@ struct queue
 pop_node(queque) //saca primer elemento de la cola
 add_node(queue,node) #agrega un proceso a la cola segun el algoritmo
 is_empty_queue(queue) #esta vacia la lista
-    
+
 struct node
     id_node
     id_process
@@ -74,7 +74,7 @@ process simulation
 inicializar todas las variables
 cargar la configuracion y los Procesos
 
-ciclo 
+ciclo
 ingresan procesos nuevos.
 if lista procesos y scheduler == null
     termina
@@ -99,3 +99,28 @@ crea la cola y la guarda en la lista de colas
 
 falta hacer get next cuando el algoritmo es MQS y MFQS ya que son multi cola
 falta actualizar save y load process
+
+*************************************************************************************
+Notas de Madrugada
++ Las estructuras en el main.h deben estar puestas antes que las definiciones de
+  las funciones porque hay funciones que ocupan a las estructuras para usarlas.
++ Los nombres de las funciones de SFJ, PS, MQS y MFQS tienen el mismo nombre que
+  los algoritmos del enum, sugiero agregar un _A al final de cada algoritmo.
++ En el main.c, línea 5, se define una variable time, pero en este caso la estamos
+  re-declarando de una función llamada time en gtk. Sugiero agregar un _g al final
+  de todas las variables. Además una función recibía un parametro time, sugiero
+  cambiar el nombre a tiempo.
++ En la función de initialize_scheduler se intenta poner en NULL a algorithm y al
+  type pero esto no es posible porque tienen tipos compatibles. Sugiero cambiar el
+  NULL por un -1. Esto se realiza también para las funciones que retornan enums.
++ Hay que revisar como usar mpfr_t como puntero (investigar sobre mpfr_ptr). Causa
+  errores en save/load_process_state. De momento los comente.
++ La función fopen debe recibir un char * no un char, para cambiar esto solo se
+  pone entre comillas dobles("") en vez de comillas simples (''). Esto es porque
+  existen modos como r+, w+ y a+ que tienen dos caracteres.
++ No existe not en C, se usa !.
++ print no existe, se usa printf.
++ Al igual que en fopen, strcmp debe recibir char * y no char. Se cambian las
+  comillas simples a comillas dobles
++ Con estos cambios, ya compila, pero sale violación de segmento.
++ Para trabajar en la interfaz, comente todo lo que estuviera en el main.

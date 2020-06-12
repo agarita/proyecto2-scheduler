@@ -7,19 +7,7 @@ struct process_list_t* process_list; //Lista con los procesos
 struct scheduler_t* scheduler; //Cola de procesos para el uso del cpu
 struct process_t* actual_process;
 mpfr_t state;
-int time,work_done,priority_required; //Lleva la cuenta de los ciclos realizados
-
-/*--------
- INTERFAZ
---------*/
-static void activate (GtkApplication* app, gpointer user_data){
-  GtkWidget *window;
-
-  window = gtk_application_window_new (app);
-  gtk_window_set_title (GTK_WINDOW (window), "Window");
-  gtk_window_set_default_size (GTK_WINDOW (window), 200, 200);
-  gtk_widget_show_all (window);
-}
+int time_g,work_done,priority_required; //Lleva la cuenta de los ciclos realizados
 
 /*-------------
  TAYLOR SERIES
@@ -96,7 +84,7 @@ void arcsin(unsigned int start, unsigned int finish){
 -------------------------------------*/
 struct process_t* initialize_process(int id, int arrival_time, int work_load, int priority) { //Reserva memoria e inicializa un proceso
 
-  mpfr_t state,pi; 
+  mpfr_t state,pi;
   struct process_t * new_process;
   new_process = malloc(sizeof(struct process_t));
   if (new_process == NULL) {
@@ -149,9 +137,9 @@ struct scheduler_t* initialize_scheduler() {
     printf("Error allocating memory for process scheduler.");
     exit(1);
   }
-  new_scheduler->algorithm = NULL;
+  new_scheduler->algorithm = -1;
   new_scheduler->process_list = NULL;
-  new_scheduler->type = NULL;
+  new_scheduler->type = -1;
   new_scheduler->queue_list = NULL;
   new_scheduler->quantum = 0;
   return new_scheduler;
@@ -232,30 +220,30 @@ void add_process(struct process_list_t* process_list,struct process_t* process) 
 };
 
 void save_process_state(struct process_t* process, mpfr_t state, int work_done) {
-  process->state = state;
+  //process->state = state;
   process->work_done = work_done;
 };
 
 void load_process_state(struct process_t* process, mpfr_t* state, int * work_done) {
   state = process->state;
-  work_done = process->work_done;
+  //work_done = process->work_done;
 };
 
 int is_finished(struct process_t* process) {
   return (process->work_load == process->work_done);
 };
 
-void process_arrival(struct process_list_t* process_list, struct scheduler_t* scheduler, int time) {
-  
+void process_arrival(struct process_list_t* process_list, struct scheduler_t* scheduler, int tiempo) {
+
   if (is_list_empty(process_list))
     return;
-  
+
   struct node_t* tmp_node,* next_node;
   struct process_t* tmp_process;
   tmp_node = process_list->first_process;
-  
+
   while(tmp_node!=NULL) {
-    if(tmp_node->process->arrival_time == time) {
+    if(tmp_node->process->arrival_time == tiempo) {
       tmp_process = tmp_node->process;
       add_process_to_scheduler(scheduler,tmp_process);
       next_node = tmp_node->next;
@@ -265,9 +253,9 @@ void process_arrival(struct process_list_t* process_list, struct scheduler_t* sc
   };
   if (is_list_empty(process_list))
     return;
-  
+
   while( tmp_node->next != NULL) {
-    if(tmp_node->next->process->arrival_time == time){
+    if(tmp_node->next->process->arrival_time == tiempo){
       tmp_process = tmp_node->next->process;
       add_process_to_scheduler(scheduler,tmp_process);
       next_node = tmp_node->next->next;
@@ -295,7 +283,7 @@ struct process_t* next_process(struct scheduler_t * scheduler) {
     tmp_process = tmp_node->process;
     scheduler->process_list->first_process = tmp_node->next;
   };
-  
+
   free(tmp_node);
   return tmp_process;
 };
@@ -308,13 +296,13 @@ void add_process_to_scheduler(struct scheduler_t * scheduler,struct process_t * 
   if ((scheduler->algorithm == FCFS) || (scheduler->algorithm == RR)) {
     add_process(scheduler->process_list, process);
   } else if (scheduler->algorithm == SJF) {
-    SJF(scheduler->process_list,process);
+    SJF_A(scheduler->process_list,process);
   } else if ((scheduler->algorithm == PS) || (scheduler->algorithm == PSRR)) {
-    PS(scheduler->process_list,process);
+    PS_A(scheduler->process_list,process);
   } else if (scheduler->algorithm == MQS) {
-    MQS(scheduler->queue_list,process);
+    MQS_A(scheduler->queue_list,process);
   } else if (scheduler->algorithm == MFQS) {
-    MFQS(scheduler->queue_list,process);
+    MFQS_A(scheduler->queue_list,process);
   };
 
 };
@@ -343,19 +331,19 @@ int load_configuration_and_process(struct scheduler_t * scheduler, struct proces
 
   quantum = arrival_time = work_load = priority = priority = priority_required = 0;
 
-  if ((configuration_file = fopen(file,'r')) == NULL) {
+  if ((configuration_file = fopen(file,"r")) == NULL) {
     printf("Error! opening file.");
     return 1;
   };
-  
+
   if (fgets(buffer,sizeof(buffer),configuration_file) == NULL) {
     printf("Error! file incomplete missing algorithm.");
     return 2;
   };
 
-  if ( not (3 == sscanf(buffer, "%s %s %d", algoritm_entry,type_s_entry, &quantum))) {
-        print("Error! incorrect quantum");
-        return 2;
+  if ( !(3 == sscanf(buffer, "%s %s %d", algoritm_entry,type_s_entry, &quantum))) {
+    printf("Error! incorrect quantum");
+    return 2;
   };
   algorithm = get_scheduling_algorithm(algoritm_entry);
   type_s = get_scheduler_type(type_s_entry);
@@ -376,8 +364,8 @@ int load_configuration_and_process(struct scheduler_t * scheduler, struct proces
     printf("Error! file incomplete.");
     return 2;
   };
-  if ( strcmp(buffer,'\n') != 0) {
-    print("Error! incorrect entry.");
+  if (strcmp(buffer,"\n") != 0) {
+    printf("Error! incorrect entry.");
     return 2;
   };
 
@@ -393,13 +381,13 @@ int load_configuration_and_process(struct scheduler_t * scheduler, struct proces
     int arrival_time,work_load,priority;
 
     if (process_parameters == 2) {
-      if ( not (process_parameters == sscanf(buffer, "%d %d", &arrival_time, &work_load))) {
-        print("Error! incorrect entry");
+      if ( !(process_parameters == sscanf(buffer, "%d %d", &arrival_time, &work_load))) {
+        printf("Error! incorrect entry");
         return 2;
       };
     } else {
-      if ( not ( process_parameters == sscanf(buffer, "%d %d% %d", &arrival_time, &work_load, &priority))) {
-         print("Error! incorrect entry");
+      if ( !( process_parameters == sscanf(buffer, "%d %d% %d", &arrival_time, &work_load, &priority))) {
+        printf("Error! incorrect entry");
         return 2;
       };
     };
@@ -410,11 +398,11 @@ int load_configuration_and_process(struct scheduler_t * scheduler, struct proces
   };
 
   if (number_of_process < MIN_PROCESS || number_of_process > MAX_PROCESS) {
-    print("Error! not enough process");
+    printf("Error! not enough process");
     return 2;
   }
 
-  fclose(configuration_file); 
+  fclose(configuration_file);
   return 0;
 };
 
@@ -435,17 +423,17 @@ int load_scheduler_MFQS_queues(struct scheduler_t* scheduler,FILE* configuration
     return 2;
   };
 
-  if ( not (1 == sscanf(buffer, "%d", &total_queues))) {
-    print("Error! incorrect entry.");
+  if ( !(1 == sscanf(buffer, "%d", &total_queues))) {
+    printf("Error! incorrect entry.");
     return 2;
   };
 
   while( (number_of_queue <= total_queues) && (fgets(buffer,sizeof(buffer),configuration_file) == NULL )) {
-    if ( not (3 == sscanf(buffer, "%s %s %d", algoritm_entry,type_s_entry, &quantum))) {
-      print("Error! incorrect entry.");
+    if ( !(3 == sscanf(buffer, "%s %s %d", algoritm_entry,type_s_entry, &quantum))) {
+      printf("Error! incorrect entry.");
       return 2;
     };
-    
+
     algorithm = get_scheduling_algorithm(algoritm_entry);
     type_s = get_scheduler_type(type_s_entry);
 
@@ -457,8 +445,8 @@ int load_scheduler_MFQS_queues(struct scheduler_t* scheduler,FILE* configuration
         printf("Error! file incomplete.");
         return 2;
       };
-      if ( strcmp(buffer,'\n') != 0) { //WARNING!. Esto puede causar que sea necesario poner doble espacio si se tiene una cola mfqs dentro de una cola mfqs
-        print("Error! incorrect entry.");
+      if ( strcmp(buffer,"\n") != 0) { //WARNING!. Esto puede causar que sea necesario poner doble espacio si se tiene una cola mfqs dentro de una cola mfqs
+        printf("Error! incorrect entry.");
         return 2;
       };
     } else if (algorithm == MQS) {
@@ -475,7 +463,7 @@ int load_scheduler_MFQS_queues(struct scheduler_t* scheduler,FILE* configuration
     number_of_queue++;
   };
   scheduler->queue_list = new_queue_list;
-  
+
 };
 
 int initialize_scheduler_MQS_queue(struct scheduler_t* scheduler) {
@@ -491,7 +479,7 @@ int initialize_scheduler_MQS_queue(struct scheduler_t* scheduler) {
 };
 
 enum scheduling_algorithms_t get_scheduling_algorithm (char* algorithm) {
- 
+
   if (strcmp(algorithm,"FCFS") == 0) {
     return FCFS;
   } else if (strcmp(algorithm,"SJF") == 0) {
@@ -507,7 +495,7 @@ enum scheduling_algorithms_t get_scheduling_algorithm (char* algorithm) {
   } else if (strcmp(algorithm,"MFQS") == 0) {
     return MFQS;
   } else {
-    return NULL;
+    return -1;
   };
 };
 
@@ -517,14 +505,14 @@ enum scheduler_type_t get_scheduler_type (char * type_s) {
   } else if (strcmp(type_s,"NONPREEMPTIVE")) {
     return NONPREEMPTIVE;
   } else {
-    return NULL;
+    return -1;
   };
 };
+
 /*---------------------------------------
      Algoritmos de calendarizacion
 ---------------------------------------*/
-
-void SJF(struct process_list_t* process_list, struct process_t * process) {
+void SJF_A(struct process_list_t* process_list, struct process_t * process) {
   struct node_t * new_node, * tmp_node;
   new_node = initialize_node(process);
 
@@ -533,7 +521,7 @@ void SJF(struct process_list_t* process_list, struct process_t * process) {
     return;
   };
   tmp_node = process_list->first_process;
-  
+
   while(tmp_node->next != NULL) {
     if ( ( process->work_load-process->work_done ) < ( tmp_node->process->work_load-tmp_node->process->work_load ) ) {
       new_node->next = tmp_node;
@@ -546,7 +534,7 @@ void SJF(struct process_list_t* process_list, struct process_t * process) {
 };
 // ME PARECE QUE ESTE NO ES EN SI UN ALGORITMO PARA GUARDAR A LA COLA, SINO QUE USAMOS FCFS, y en el ciclo del CPU, cada vez que se complete el quantum, se saca el proceso del cpu y se mete a la cola, y se coloca el siguiente proceso en cpu.
 
-void PS(struct process_list_t* process_list, struct process_t * process) {
+void PS_A(struct process_list_t* process_list, struct process_t * process) {
   struct node_t * new_node, * tmp_node;
   new_node = initialize_node(process);
 
@@ -571,10 +559,10 @@ void PS(struct process_list_t* process_list, struct process_t * process) {
     tmp_node = tmp_node->next;
   }
   tmp_node->next = new_node;
-}; 
+};
 //Este de aqui me parece que funciona igual que el PS, solo que en el ciclo del CPU, cada vez que se complete el quantum, se compara el el proceso actual del cpu con el primero de la cola, si comparten prioridad, se saca el proceso y se mete a la cola, y se coloca el siguiente proceso en cpu, sino continua otra ronda de quantum.
 
-void MQS(struct queue_list_t* queue_list, struct process_t * process) {
+void MQS_A(struct queue_list_t* queue_list, struct process_t * process) {
   struct queue_node_t * tmp_queue_node;
   struct node_t * new_node;
 
@@ -586,16 +574,16 @@ void MQS(struct queue_list_t* queue_list, struct process_t * process) {
       add_process(tmp_queue_node->scheduler->process_list,process);
     };
     tmp_queue_node = tmp_queue_node->next;
-  };    
+  };
 };
 
-void MFQS(struct queue_list_t* queue_list, struct process_t * process) {
+void MFQS_A(struct queue_list_t* queue_list, struct process_t * process) {
   struct queue_node_t * tmp_queue_node;
   struct node_t * new_node;
   int next_queue;
 
   next_queue = (process->last_queue + 1)% 5;
-  if (not (next_queue) {
+  if (!next_queue) {
     next_queue = 5;
   };
   tmp_queue_node = queue_list->first_queue;
@@ -606,25 +594,99 @@ void MFQS(struct queue_list_t* queue_list, struct process_t * process) {
       add_process_to_scheduler(tmp_queue_node->scheduler,process);
     };
     tmp_queue_node = tmp_queue_node->next;
-  };   
+  };
 };
+
+/*--------
+ INTERFAZ
+--------*/
+static void activate (GtkApplication* app, gpointer user_data){
+  GtkWidget *window;
+  GtkWidget *grid, *scrolledWindow;
+
+  GtkWidget *entAlgoritmo, *entModo, *entQuantum_Trabajo;
+  GtkWidget *txtAlgoritmo, *txtModo, *txtQuantum_Trabajo;
+
+  GtkWidget *btnEjecutar, *btnCargar, *btnLimpiar, *btnSalir;
+
+  GtkWidget *textView;
+
+  // Create window, and set name, size and margin
+  window = gtk_application_window_new (app);
+  gtk_window_set_title (GTK_WINDOW (window), "Scheduler");
+  gtk_container_set_border_width(GTK_CONTAINER(window), 10);
+
+  // Create the grid to pack everything and pack it on the window
+  grid = gtk_grid_new ();
+  gtk_container_add(GTK_CONTAINER(window), grid);
+
+  //Create text
+  txtAlgoritmo = gtk_label_new("Algoritmo: ");
+  gtk_grid_attach (GTK_GRID (grid), txtAlgoritmo, 0,0,1,1);
+  txtModo = gtk_label_new("Modo: ");
+  gtk_grid_attach (GTK_GRID (grid), txtModo, 0,1,1,1);
+  txtQuantum_Trabajo = gtk_label_new("Quantum: ");
+  gtk_grid_attach (GTK_GRID (grid), txtQuantum_Trabajo, 0,2,1,1);
+
+  //Create editable lables
+  entAlgoritmo = gtk_entry_new();
+  gtk_editable_set_editable(GTK_EDITABLE(entAlgoritmo), FALSE);
+  gtk_grid_attach (GTK_GRID (grid), entAlgoritmo, 1,0,1,1);
+  entModo = gtk_entry_new();
+  gtk_editable_set_editable(GTK_EDITABLE(entModo), FALSE);
+  gtk_grid_attach (GTK_GRID (grid), entModo, 1,1,1,1);
+  entQuantum_Trabajo = gtk_entry_new();
+  gtk_editable_set_editable(GTK_EDITABLE(entQuantum_Trabajo), FALSE);
+  gtk_grid_attach (GTK_GRID (grid), entQuantum_Trabajo, 1,2,1,1);
+
+  btnEjecutar = gtk_button_new_with_label("Ejecutar");
+  gtk_widget_set_tooltip_text(btnEjecutar, "Ejecutar algoritmos");
+  gtk_grid_attach (GTK_GRID (grid), btnEjecutar, 3,4,1,1);
+  btnCargar = gtk_button_new_with_label("Cargar");
+  gtk_widget_set_tooltip_text(btnCargar, "Cargar un archivo de configuración");
+  gtk_grid_attach (GTK_GRID (grid), btnCargar, 3,5,1,1);
+  btnLimpiar = gtk_button_new_with_label("Limpiar");
+  gtk_widget_set_tooltip_text(btnLimpiar, "Limpiar la configuración");
+  gtk_grid_attach (GTK_GRID (grid), btnLimpiar, 4,4,1,1);
+  btnSalir = gtk_button_new_with_label("Limpiar");
+  gtk_widget_set_tooltip_text(btnSalir, "Limpiar la configuración");
+  gtk_grid_attach (GTK_GRID (grid), btnSalir, 4,5,1,1);
+
+  scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
+  gtk_grid_attach (GTK_GRID (grid), scrolledWindow, 0,3,3,10);
+  textView = gtk_text_view_new();
+  gtk_container_add (GTK_CONTAINER (scrolledWindow), textView);
+
+
+  gtk_widget_show_all (window);
+}
+
 
 /*-------------
      MAIN
 -------------*/
 int main(int argc, char *argv[]) {
-  
+  GtkApplication *app;
+  int status;
+
+  app = gtk_application_new ("org.gtk.example", G_APPLICATION_FLAGS_NONE);
+  g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
+  status = g_application_run(G_APPLICATION (app), argc, argv);
+  g_object_unref (app);
+
+  return status;
+  /*
   initialize_process_list(process_list); //Se inicializa la lista de procesos
   initialize_scheduler(scheduler); //Se inicializa la cola del scheduler
-  time = 0; // inicia en el ciclo 0
+  time_g = 0; // inicia en el ciclo 0
   work_done = 0;
   actual_process = NULL;
 
   load_configuration_and_process(scheduler,process_list,"path"); //Se carga la configuracion y los procesos
   mpfr_t pi;
-  
+
   while (1) {
-    process_arrival(process_list,scheduler,time);
+    process_arrival(process_list,scheduler,time_g);
     if ( is_list_empty(process_list) && is_scheduler_empty(scheduler) ) {
       //salir
       //limpiar la memoria reservada
@@ -668,6 +730,7 @@ int main(int argc, char *argv[]) {
     };
   };
 
+  //****************************************************************************
   mpfr_init2(pi, 256);
   mpfr_init2(state, 256);
 
@@ -687,9 +750,9 @@ int main(int argc, char *argv[]) {
 
   mpfr_clear(pi);
   mpfr_clear(state);
-  return 0;
 
-  /*GtkApplication *app;
+  //****************************************************************************
+  GtkApplication *app;
   int status;
 
   app = gtk_application_new ("org.gtk.example", G_APPLICATION_FLAGS_NONE);
