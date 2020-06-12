@@ -219,14 +219,18 @@ void add_process(struct process_list_t* process_list,struct process_t* process) 
   tmp_node->next = new_node;
 };
 
-void save_process_state(struct process_t* process, mpfr_t state, int work_done) {
+void save_process_state(struct process_t* process, mpfr_ptr state, mpfr_ptr pi, int work_done) {
   //process->state = state;
+
+  mpfr_set((mpfr_ptr) *(process->state), (mpfr_ptr) state, MPFR_RNDD);
+  mpfr_set((mpfr_ptr) *(process->state), (mpfr_ptr) pi, MPFR_RNDD);
   process->work_done = work_done;
 };
 
-void load_process_state(struct process_t* process, mpfr_t* state, int * work_done) {
-  state = process->state;
-  //work_done = process->work_done;
+void load_process_state(struct process_t* process, mpfr_t state, mpfr_t pi, int * work_done) {
+  mpfr_set(state, (mpfr_ptr) * (process->state), MPFR_RNDD);
+  mpfr_set(pi, (mpfr_ptr) *( process->state), MPFR_RNDD);
+  work_done = &process->work_done;
 };
 
 int is_finished(struct process_t* process) {
@@ -273,7 +277,7 @@ struct process_t* next_process(struct scheduler_t * scheduler) {
   if (scheduler->algorithm == MQS) {
     tmp_queue_node = scheduler->queue_list->first_queue;
     while(tmp_queue_node != NULL){
-
+      //>>falta
     };
 
   } else if (scheduler->algorithm == MFQS) {
