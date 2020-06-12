@@ -44,3 +44,8 @@ Para limpiar el folder use:
 Si desea compilar manualmente el programa use:
 
     gcc -o run.o main.c -lmpfr -lgmp `pkg-config --cflags --libs gtk+-3.0`
+    
+Solo la interfaz
+
+	gcc -o run.o mainCalc.c `pkg-config --cflags --libs gtk+-3.0`
+    ./run.o
