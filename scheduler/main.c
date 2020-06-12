@@ -641,18 +641,23 @@ static void activate (GtkApplication* app, gpointer user_data){
 
   btnEjecutar = gtk_button_new_with_label("Ejecutar");
   gtk_widget_set_tooltip_text(btnEjecutar, "Ejecutar algoritmos");
+  gtk_widget_set_vexpand(btnEjecutar, TRUE);
   gtk_grid_attach (GTK_GRID (grid), btnEjecutar, 3,4,1,1);
   btnCargar = gtk_button_new_with_label("Cargar");
   gtk_widget_set_tooltip_text(btnCargar, "Cargar un archivo de configuración");
+  gtk_widget_set_vexpand(btnCargar, TRUE);
   gtk_grid_attach (GTK_GRID (grid), btnCargar, 3,5,1,1);
   btnLimpiar = gtk_button_new_with_label("Limpiar");
   gtk_widget_set_tooltip_text(btnLimpiar, "Limpiar la configuración");
+  gtk_widget_set_vexpand(btnLimpiar, TRUE);
   gtk_grid_attach (GTK_GRID (grid), btnLimpiar, 4,4,1,1);
-  btnSalir = gtk_button_new_with_label("Limpiar");
-  gtk_widget_set_tooltip_text(btnSalir, "Limpiar la configuración");
+  btnSalir = gtk_button_new_with_label("Salir");
+  gtk_widget_set_tooltip_text(btnSalir, "Sale del programa");
+  gtk_widget_set_vexpand(btnSalir, TRUE);
   gtk_grid_attach (GTK_GRID (grid), btnSalir, 4,5,1,1);
 
   scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
+  gtk_widget_set_vexpand(scrolledWindow, TRUE);
   gtk_grid_attach (GTK_GRID (grid), scrolledWindow, 0,3,3,10);
   textView = gtk_text_view_new();
   gtk_container_add (GTK_CONTAINER (scrolledWindow), textView);
