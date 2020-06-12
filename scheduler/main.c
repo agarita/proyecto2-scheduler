@@ -9,13 +9,12 @@ struct process_t* actual_process;
 mpfr_t state;
 int time_g,work_done,priority_required; //Lleva la cuenta de los ciclos realizados
 
-GtkWidget *window;
-GtkWidget *entAlgoritmo, *entModo, *entQuantum_Trabajo;
-GtkWidget *entPID, *entAvance;  //Variables de proceso activo.
-GtkWidget *lblQuantum_Trabajo;  //Hay que editar este dependiendo del modo.
-GtkWidget *tvReady, *tvFinished;
-GtkWidget *barProccess;
-
+GtkWidget *window; //Toda la ventana
+GtkWidget *txtAlgoritmo, *txtModo, *txtQuantum_Trabajo; //Informacion algoritmo
+GtkWidget *lblQuantum_Trabajo; //Label que cambia dependiendo del modo
+GtkWidget *txtPID, *txtAvance; //Informacion proceso activo
+GtkWidget *tvReady, *tvFinished; //Informacion proceos ready y finished
+GtkWidget *pgProceso; //Barra de progreso del proceso activo
 /*-------------
  TAYLOR SERIES
 -------------*/
@@ -607,6 +606,30 @@ void MFQS_A(struct queue_list_t* queue_list, struct process_t * process) {
 /*--------
  INTERFAZ
 --------*/
+void update_algorithm_GUI (char * algoritmo, char * modo, char * quantum_trabajo, int modeType){
+  gtk_label_set_text(GTK_LABEL(txtAlgoritmo), algoritmo);
+  gtk_label_set_text(GTK_LABEL(txtModo), modo);
+  gtk_label_set_text(GTK_LABEL(txtQuantum_Trabajo), quantum_trabajo);
+  if(modeType == NONPREEMPTIVE){
+    gtk_label_set_text(GTK_LABEL(lblQuantum_Trabajo), "Cantidad de Trabajo:");
+  }
+  else{
+    gtk_label_set_text(GTK_LABEL(lblQuantum_Trabajo), "Quantum:");
+  }
+
+}
+
+void update_process_GUI (char * id, char * avance, int work_done, int total_work){
+  double fraction;
+
+  gtk_label_set_text(GTK_LABEL(txtPID), id);
+  gtk_label_set_text(GTK_LABEL(txtAvance), avance);
+
+  fraction = (double)(1.0/total_work)*(double)work_done;
+  printf("%F\n", fraction);
+  gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(pgProceso), fraction);
+}
+
 void on_btnEjecutar_click (GtkButton *button, gpointer user_data){
   printf("Ejecutar\n");
 }
@@ -635,6 +658,8 @@ void on_btnCargar_click (GtkButton *button, gpointer user_data){
 }
 
 void on_btnLimpiar_click (GtkButton *button, gpointer user_data){
+  update_algorithm_GUI("","","",0);
+  update_process_GUI("", "", 56, 100);
   printf("Limpiar\n");
 }
 
@@ -663,7 +688,8 @@ static void activate (GtkApplication* app, gpointer user_data){
 
   //Create text labels.
   frame1 = gtk_frame_new("Algoritmo de Calendarización");
-  gtk_grid_attach(GTK_GRID(grid), frame1, 0, 0, 6, 3);
+  gtk_widget_set_hexpand(frame1, TRUE);
+  gtk_grid_attach(GTK_GRID(grid), frame1, 0, 0, 8, 3);
   gridlbl = gtk_grid_new();
   gtk_container_add(GTK_CONTAINER (frame1), gridlbl);
 
@@ -673,20 +699,20 @@ static void activate (GtkApplication* app, gpointer user_data){
   GtkWidget * lblModo = gtk_label_new("Modo: ");
   gtk_widget_set_halign(GTK_WIDGET(lblModo), GTK_ALIGN_START);
   gtk_grid_attach (GTK_GRID (gridlbl), lblModo, 0, 1, 1, 1);
-  lblQuantum_Trabajo = gtk_label_new("Quantum: \n");
+  lblQuantum_Trabajo = gtk_label_new("Quantum: ");
   gtk_widget_set_halign(GTK_WIDGET(lblQuantum_Trabajo), GTK_ALIGN_START);
   gtk_grid_attach (GTK_GRID (gridlbl), lblQuantum_Trabajo, 0, 2, 1, 1);
 
   //Create editable lables
-  entAlgoritmo = gtk_label_new("a");
-  gtk_widget_set_halign(GTK_WIDGET(entAlgoritmo), GTK_ALIGN_START);
-  gtk_grid_attach (GTK_GRID (gridlbl), entAlgoritmo, 1, 0, 1, 1);
-  entModo = gtk_label_new("a");
-  gtk_widget_set_halign(GTK_WIDGET(entModo), GTK_ALIGN_START);
-  gtk_grid_attach (GTK_GRID (gridlbl), entModo, 1, 1, 1, 1);
-  entQuantum_Trabajo = gtk_label_new("a\n");
-  gtk_widget_set_halign(GTK_WIDGET(entQuantum_Trabajo), GTK_ALIGN_START);
-  gtk_grid_attach (GTK_GRID (gridlbl), entQuantum_Trabajo, 1, 2, 1, 1);
+  txtAlgoritmo = gtk_label_new("a");
+  gtk_widget_set_halign(GTK_WIDGET(txtAlgoritmo), GTK_ALIGN_START);
+  gtk_grid_attach (GTK_GRID (gridlbl), txtAlgoritmo, 1, 0, 1, 1);
+  txtModo = gtk_label_new("a");
+  gtk_widget_set_halign(GTK_WIDGET(txtModo), GTK_ALIGN_START);
+  gtk_grid_attach (GTK_GRID (gridlbl), txtModo, 1, 1, 1, 1);
+  txtQuantum_Trabajo = gtk_label_new("a");
+  gtk_widget_set_halign(GTK_WIDGET(txtQuantum_Trabajo), GTK_ALIGN_START);
+  gtk_grid_attach (GTK_GRID (gridlbl), txtQuantum_Trabajo, 1, 2, 1, 1);
 
   //Create buttons
   btnEjecutar = gtk_button_new_with_label("Ejecutar");
@@ -741,17 +767,17 @@ static void activate (GtkApplication* app, gpointer user_data){
   GtkWidget * lblPAvance = gtk_label_new("Avance: \n");
   gtk_widget_set_halign(GTK_WIDGET(lblPAvance), GTK_ALIGN_START);
   gtk_grid_attach(GTK_GRID(gridActive), lblPAvance, 0, 1, 1, 1);
-  entPID = gtk_label_new("a");
-  gtk_widget_set_halign(GTK_WIDGET(entPID), GTK_ALIGN_START);
-  gtk_grid_attach(GTK_GRID(gridActive), entPID, 1, 0, 1, 1);
-  entAvance = gtk_label_new("a\n");
-  gtk_widget_set_halign(GTK_WIDGET(entAvance), GTK_ALIGN_START);
-  gtk_grid_attach(GTK_GRID(gridActive), entAvance, 1, 1, 1, 1);
-  barProccess = gtk_progress_bar_new();
-  gtk_progress_bar_set_text(GTK_PROGRESS_BAR(barProccess), NULL);
-  gtk_progress_bar_set_show_text(GTK_PROGRESS_BAR(barProccess), TRUE);
-  gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(barProccess), 0.3);
-  gtk_grid_attach(GTK_GRID(gridActive), barProccess, 0, 2, 4, 1);
+  txtPID = gtk_label_new("a");
+  gtk_widget_set_halign(GTK_WIDGET(txtPID), GTK_ALIGN_START);
+  gtk_grid_attach(GTK_GRID(gridActive), txtPID, 1, 0, 1, 1);
+  txtAvance = gtk_label_new("a\n");
+  gtk_widget_set_halign(GTK_WIDGET(txtAvance), GTK_ALIGN_START);
+  gtk_grid_attach(GTK_GRID(gridActive), txtAvance, 1, 1, 1, 1);
+  pgProceso = gtk_progress_bar_new();
+  gtk_progress_bar_set_text(GTK_PROGRESS_BAR(pgProceso), NULL);
+  gtk_progress_bar_set_show_text(GTK_PROGRESS_BAR(pgProceso), TRUE);
+  gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(pgProceso), 0.3);
+  gtk_grid_attach(GTK_GRID(gridActive), pgProceso, 0, 2, 4, 1);
 
   //Load everyhting
   gtk_widget_show_all (window);

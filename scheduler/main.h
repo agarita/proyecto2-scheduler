@@ -79,6 +79,9 @@ int is_queue_list_empty (struct queue_list_t* queue_list); //Dice si la lista de
 enum scheduling_algorithms_t get_scheduling_algorithm (char* algorithm); //Convierte un string con el algoritmo en el enum correspondiente
 enum scheduler_type_t get_scheduler_type (char * type_s); //Convierte un string con el tipo de scheduler en el enum correspondiente
 
+void update_algorithm_GUI (char * algoritmo, char * modo, char * quantum_trabajo, int modeType);
+void update_process_GUI (char * id, char * avance, int work_done, int total_work);
+
 void on_btnEjecutar_click(GtkButton *button, gpointer user_data);
 void on_btnCargar_click(GtkButton *button, gpointer user_data);
 void on_btnLimpiar_click(GtkButton *button, gpointer user_data);
