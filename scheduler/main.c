@@ -9,6 +9,13 @@ struct process_t* actual_process;
 mpfr_t state;
 int time_g,work_done,priority_required; //Lleva la cuenta de los ciclos realizados
 
+GtkWidget *window;
+GtkWidget *entAlgoritmo, *entModo, *entQuantum_Trabajo;
+GtkWidget *entPID, *entAvance;  //Variables de proceso activo.
+GtkWidget *lblQuantum_Trabajo;  //Hay que editar este dependiendo del modo.
+GtkWidget *tvReady, *tvFinished;
+GtkWidget *barProccess;
+
 /*-------------
  TAYLOR SERIES
 -------------*/
@@ -600,72 +607,155 @@ void MFQS_A(struct queue_list_t* queue_list, struct process_t * process) {
 /*--------
  INTERFAZ
 --------*/
+void on_btnEjecutar_click (GtkButton *button, gpointer user_data){
+  printf("Ejecutar\n");
+}
+
+void on_btnCargar_click (GtkButton *button, gpointer user_data){
+  GtkWidget *dialog;
+  GtkFileChooserAction action = GTK_FILE_CHOOSER_ACTION_OPEN;
+  gint res;
+
+  dialog = gtk_file_chooser_dialog_new ("Abrir Archivo", GTK_WINDOW(window), action,
+                                        "_Cancel",GTK_RESPONSE_CANCEL,
+                                        "_Open", GTK_RESPONSE_ACCEPT,
+                                        NULL);
+  res = gtk_dialog_run (GTK_DIALOG (dialog));
+  if (res == GTK_RESPONSE_ACCEPT){
+    char *filename;
+    GtkFileChooser *chooser = GTK_FILE_CHOOSER (dialog);
+
+    //Aquí se obtiene el nombre de archivo
+    filename = gtk_file_chooser_get_filename (chooser);
+    printf("%s\n", filename);
+    g_free(filename);
+  }
+
+  gtk_widget_destroy(dialog);
+}
+
+void on_btnLimpiar_click (GtkButton *button, gpointer user_data){
+  printf("Limpiar\n");
+}
+
+void on_btnReiniciar_click (GtkButton *button, gpointer user_data){
+  printf("Resetear\n");
+}
+
 static void activate (GtkApplication* app, gpointer user_data){
-  GtkWidget *window;
-  GtkWidget *grid, *scrolledWindow;
+  //CONTAINERS
+  GtkWidget *grid, *gridlbl, *gridActive;
+  GtkWidget *frame1, *frame2, *frame3, *frame4;
+  GtkWidget *scrolledWindow, *scrolledWindow2;
 
-  GtkWidget *entAlgoritmo, *entModo, *entQuantum_Trabajo;
-  GtkWidget *txtAlgoritmo, *txtModo, *txtQuantum_Trabajo;
-
-  GtkWidget *btnEjecutar, *btnCargar, *btnLimpiar, *btnSalir;
-
-  GtkWidget *textView;
+  //BUTTONS
+  GtkWidget *btnEjecutar, *btnCargar, *btnLimpiar, *btnReiniciar;
 
   // Create window, and set name, size and margin
   window = gtk_application_window_new (app);
   gtk_window_set_title (GTK_WINDOW (window), "Scheduler");
+  gtk_window_set_default_size(GTK_WINDOW (window), 600, 450);
   gtk_container_set_border_width(GTK_CONTAINER(window), 10);
 
   // Create the grid to pack everything and pack it on the window
   grid = gtk_grid_new ();
   gtk_container_add(GTK_CONTAINER(window), grid);
 
-  //Create text
-  txtAlgoritmo = gtk_label_new("Algoritmo: ");
-  gtk_grid_attach (GTK_GRID (grid), txtAlgoritmo, 0,0,1,1);
-  txtModo = gtk_label_new("Modo: ");
-  gtk_grid_attach (GTK_GRID (grid), txtModo, 0,1,1,1);
-  txtQuantum_Trabajo = gtk_label_new("Quantum: ");
-  gtk_grid_attach (GTK_GRID (grid), txtQuantum_Trabajo, 0,2,1,1);
+  //Create text labels.
+  frame1 = gtk_frame_new("Algoritmo de Calendarización");
+  gtk_grid_attach(GTK_GRID(grid), frame1, 0, 0, 6, 3);
+  gridlbl = gtk_grid_new();
+  gtk_container_add(GTK_CONTAINER (frame1), gridlbl);
+
+  GtkWidget * lblAlgoritmo = gtk_label_new("Algoritmo: ");
+  gtk_widget_set_halign(GTK_WIDGET(lblAlgoritmo), GTK_ALIGN_START);
+  gtk_grid_attach (GTK_GRID (gridlbl), lblAlgoritmo, 0, 0, 1, 1);
+  GtkWidget * lblModo = gtk_label_new("Modo: ");
+  gtk_widget_set_halign(GTK_WIDGET(lblModo), GTK_ALIGN_START);
+  gtk_grid_attach (GTK_GRID (gridlbl), lblModo, 0, 1, 1, 1);
+  lblQuantum_Trabajo = gtk_label_new("Quantum: \n");
+  gtk_widget_set_halign(GTK_WIDGET(lblQuantum_Trabajo), GTK_ALIGN_START);
+  gtk_grid_attach (GTK_GRID (gridlbl), lblQuantum_Trabajo, 0, 2, 1, 1);
 
   //Create editable lables
-  entAlgoritmo = gtk_entry_new();
-  gtk_editable_set_editable(GTK_EDITABLE(entAlgoritmo), FALSE);
-  gtk_grid_attach (GTK_GRID (grid), entAlgoritmo, 1,0,1,1);
-  entModo = gtk_entry_new();
-  gtk_editable_set_editable(GTK_EDITABLE(entModo), FALSE);
-  gtk_grid_attach (GTK_GRID (grid), entModo, 1,1,1,1);
-  entQuantum_Trabajo = gtk_entry_new();
-  gtk_editable_set_editable(GTK_EDITABLE(entQuantum_Trabajo), FALSE);
-  gtk_grid_attach (GTK_GRID (grid), entQuantum_Trabajo, 1,2,1,1);
+  entAlgoritmo = gtk_label_new("a");
+  gtk_widget_set_halign(GTK_WIDGET(entAlgoritmo), GTK_ALIGN_START);
+  gtk_grid_attach (GTK_GRID (gridlbl), entAlgoritmo, 1, 0, 1, 1);
+  entModo = gtk_label_new("a");
+  gtk_widget_set_halign(GTK_WIDGET(entModo), GTK_ALIGN_START);
+  gtk_grid_attach (GTK_GRID (gridlbl), entModo, 1, 1, 1, 1);
+  entQuantum_Trabajo = gtk_label_new("a\n");
+  gtk_widget_set_halign(GTK_WIDGET(entQuantum_Trabajo), GTK_ALIGN_START);
+  gtk_grid_attach (GTK_GRID (gridlbl), entQuantum_Trabajo, 1, 2, 1, 1);
 
+  //Create buttons
   btnEjecutar = gtk_button_new_with_label("Ejecutar");
   gtk_widget_set_tooltip_text(btnEjecutar, "Ejecutar algoritmos");
-  gtk_widget_set_vexpand(btnEjecutar, TRUE);
-  gtk_grid_attach (GTK_GRID (grid), btnEjecutar, 3,4,1,1);
+  g_signal_connect (GTK_BUTTON (btnEjecutar), "clicked",
+                    G_CALLBACK (on_btnEjecutar_click), NULL);
+  gtk_grid_attach (GTK_GRID (grid), btnEjecutar, 5,14,1,1);
   btnCargar = gtk_button_new_with_label("Cargar");
   gtk_widget_set_tooltip_text(btnCargar, "Cargar un archivo de configuración");
-  gtk_widget_set_vexpand(btnCargar, TRUE);
-  gtk_grid_attach (GTK_GRID (grid), btnCargar, 3,5,1,1);
+  g_signal_connect (GTK_BUTTON (btnCargar), "clicked",
+                    G_CALLBACK (on_btnCargar_click), window);
+  gtk_grid_attach (GTK_GRID (grid), btnCargar, 5,15,1,1);
   btnLimpiar = gtk_button_new_with_label("Limpiar");
   gtk_widget_set_tooltip_text(btnLimpiar, "Limpiar la configuración");
-  gtk_widget_set_vexpand(btnLimpiar, TRUE);
-  gtk_grid_attach (GTK_GRID (grid), btnLimpiar, 4,4,1,1);
-  btnSalir = gtk_button_new_with_label("Salir");
-  gtk_widget_set_tooltip_text(btnSalir, "Sale del programa");
-  gtk_widget_set_vexpand(btnSalir, TRUE);
-  gtk_grid_attach (GTK_GRID (grid), btnSalir, 4,5,1,1);
+  g_signal_connect (GTK_BUTTON (btnLimpiar), "clicked",
+                    G_CALLBACK (on_btnLimpiar_click), NULL);
+  gtk_grid_attach (GTK_GRID (grid), btnLimpiar, 6,14,1,1);
+  btnReiniciar = gtk_button_new_with_label("Reiniciar");
+  gtk_widget_set_tooltip_text(btnReiniciar, "Reinicia el programa con la configuración actual");
+  g_signal_connect (GTK_BUTTON (btnReiniciar), "clicked",
+                    G_CALLBACK (on_btnReiniciar_click), NULL);
+  gtk_grid_attach (GTK_GRID (grid), btnReiniciar, 6,15,1,1);
 
+  //Create textviews for ready and finished proccess
+  frame2 = gtk_frame_new("Procesos listos");
+  gtk_grid_attach (GTK_GRID (grid), frame2, 0,4,4,4);
+  gtk_widget_set_hexpand(frame2, TRUE);
+  gtk_widget_set_vexpand(frame2, TRUE);
   scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
-  gtk_widget_set_vexpand(scrolledWindow, TRUE);
-  gtk_grid_attach (GTK_GRID (grid), scrolledWindow, 0,3,3,10);
-  textView = gtk_text_view_new();
-  gtk_container_add (GTK_CONTAINER (scrolledWindow), textView);
+  gtk_container_add (GTK_CONTAINER(frame2), scrolledWindow);
+  tvReady = gtk_text_view_new();
+  gtk_container_add (GTK_CONTAINER (scrolledWindow), tvReady);
 
+  frame3 = gtk_frame_new("Procesos terminados");
+  gtk_grid_attach(GTK_GRID(grid), frame3, 0,12,4,4);
+  gtk_widget_set_hexpand(frame3, TRUE);
+  gtk_widget_set_vexpand(frame3, TRUE);
+  scrolledWindow2 = gtk_scrolled_window_new(NULL, NULL);
+  gtk_container_add (GTK_CONTAINER(frame3), scrolledWindow2);
+  tvFinished = gtk_text_view_new();
+  gtk_container_add (GTK_CONTAINER(scrolledWindow2), tvFinished);
 
+  //Create active process section
+  frame4 = gtk_frame_new("Proceso activo");
+  gtk_grid_attach(GTK_GRID(grid), frame4, 5, 6, 2, 1);
+  gridActive = gtk_grid_new();
+  gtk_container_add (GTK_CONTAINER(frame4), gridActive);
+
+  GtkWidget * lblPID = gtk_label_new("PID: ");
+  gtk_widget_set_halign(GTK_WIDGET(lblPID), GTK_ALIGN_START);
+  gtk_grid_attach(GTK_GRID(gridActive), lblPID, 0, 0, 1, 1);
+  GtkWidget * lblPAvance = gtk_label_new("Avance: \n");
+  gtk_widget_set_halign(GTK_WIDGET(lblPAvance), GTK_ALIGN_START);
+  gtk_grid_attach(GTK_GRID(gridActive), lblPAvance, 0, 1, 1, 1);
+  entPID = gtk_label_new("a");
+  gtk_widget_set_halign(GTK_WIDGET(entPID), GTK_ALIGN_START);
+  gtk_grid_attach(GTK_GRID(gridActive), entPID, 1, 0, 1, 1);
+  entAvance = gtk_label_new("a\n");
+  gtk_widget_set_halign(GTK_WIDGET(entAvance), GTK_ALIGN_START);
+  gtk_grid_attach(GTK_GRID(gridActive), entAvance, 1, 1, 1, 1);
+  barProccess = gtk_progress_bar_new();
+  gtk_progress_bar_set_text(GTK_PROGRESS_BAR(barProccess), NULL);
+  gtk_progress_bar_set_show_text(GTK_PROGRESS_BAR(barProccess), TRUE);
+  gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(barProccess), 0.3);
+  gtk_grid_attach(GTK_GRID(gridActive), barProccess, 0, 2, 4, 1);
+
+  //Load everyhting
   gtk_widget_show_all (window);
 }
-
 
 /*-------------
      MAIN
