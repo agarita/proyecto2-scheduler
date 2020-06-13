@@ -81,7 +81,8 @@ enum scheduling_algorithms_t get_scheduling_algorithm (char* algorithm); //Convi
 enum scheduler_type_t get_scheduler_type (char * type_s); //Convierte un string con el tipo de scheduler en el enum correspondiente
 
 void update_algorithm_GUI (char * algoritmo, char * modo, char * quantum_trabajo, int modeType);
-void update_process_GUI (char * id, char * avance, int work_done, int total_work);
+void update_active_process_GUI (char * id, char * avance, int work_done, int total_work);
+void update_process_list_GUI ();
 
 void on_btnEjecutar_click(GtkButton *button, gpointer user_data);
 void on_btnCargar_click(GtkButton *button, gpointer user_data);
@@ -94,6 +95,7 @@ void free_process(struct process_t* process); //Limpia la memoria de un proceso.
 void free_process_list(struct process_list_t * process_list); //Limpia la memoria de una lista de procesos y todos sus procesos.
 void free_scheduler(struct scheduler_t * scheduler); //Limpia la memoria de una cola.
 void free_queue_list(struct queue_list_t* queue_list); //Limpia la memoria de una lista de colas y todas sus colas.
+
 //Funcion que realiza el cpu de arcsin
 void arcsin();
 
