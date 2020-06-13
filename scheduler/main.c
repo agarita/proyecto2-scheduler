@@ -744,7 +744,7 @@ void update_algorithm_GUI (char * algoritmo, char * modo, char * quantum_trabajo
 
 }
 
-void update_process_GUI (char * id, char * avance, int work_done, int total_work){
+void update_active_process_GUI (char * id, char * avance, int work_done, int total_work){
   double fraction;
 
   gtk_label_set_text(GTK_LABEL(txtPID), id);
@@ -753,6 +753,17 @@ void update_process_GUI (char * id, char * avance, int work_done, int total_work
   fraction = (double)(1.0/total_work)*(double)work_done;
   printf("%F\n", fraction);
   gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(pgProceso), fraction);
+}
+
+void update_process_list_GUI(){
+  GtkTextBuffer *bufferReady, *bufferFinished;
+  bufferReady = gtk_text_buffer_new(NULL);
+  bufferFinished = gtk_text_buffer_new(NULL);
+  gtk_text_buffer_insert_at_cursor(bufferReady, "Procesos listos!!!", -1);
+  gtk_text_buffer_insert_at_cursor(bufferFinished, "Procesos terminados!!!\n", -1);
+  gtk_text_buffer_insert_at_cursor(bufferFinished, "Procesos terminados!!!\n", -1);
+  gtk_text_view_set_buffer (GTK_TEXT_VIEW(tvReady), bufferReady);
+  gtk_text_view_set_buffer (GTK_TEXT_VIEW(tvFinished), bufferFinished);
 }
 
 void on_btnEjecutar_click (GtkButton *button, gpointer user_data){
@@ -784,7 +795,8 @@ void on_btnCargar_click (GtkButton *button, gpointer user_data){
 
 void on_btnLimpiar_click (GtkButton *button, gpointer user_data){
   update_algorithm_GUI("","","",0);
-  update_process_GUI("", "", 56, 100);
+  update_active_process_GUI("", "", 56, 100);
+  update_process_list_GUI();
   printf("Limpiar\n");
 }
 
@@ -869,6 +881,8 @@ static void activate (GtkApplication* app, gpointer user_data){
   scrolledWindow = gtk_scrolled_window_new(NULL, NULL);
   gtk_container_add (GTK_CONTAINER(frame2), scrolledWindow);
   tvReady = gtk_text_view_new();
+  gtk_text_view_set_editable(GTK_TEXT_VIEW(tvReady), FALSE);
+  gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(tvReady), FALSE);
   gtk_container_add (GTK_CONTAINER (scrolledWindow), tvReady);
 
   frame3 = gtk_frame_new("Procesos terminados");
@@ -878,6 +892,8 @@ static void activate (GtkApplication* app, gpointer user_data){
   scrolledWindow2 = gtk_scrolled_window_new(NULL, NULL);
   gtk_container_add (GTK_CONTAINER(frame3), scrolledWindow2);
   tvFinished = gtk_text_view_new();
+  gtk_text_view_set_editable(GTK_TEXT_VIEW(tvFinished), FALSE);
+  gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(tvFinished), FALSE);
   gtk_container_add (GTK_CONTAINER(scrolledWindow2), tvFinished);
 
   //Create active process section
@@ -912,7 +928,7 @@ static void activate (GtkApplication* app, gpointer user_data){
      MAIN
 -------------*/
 int main(int argc, char *argv[]) {
-  /*
+
   GtkApplication *app;
   int status;
 
