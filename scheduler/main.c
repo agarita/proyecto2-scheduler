@@ -235,7 +235,7 @@ int is_scheduler_empty(struct scheduler_t * scheduler) {
     };
     return 1;
 
-  } else { 
+  } else {
     return is_list_empty(scheduler->process_list);
   };
 };
@@ -341,7 +341,7 @@ struct process_t* next_process(struct scheduler_t * scheduler) {
     scheduler->process_list->first_process = tmp_node->next;
     free(tmp_node);
     return tmp_process;
-  };  
+  };
 };
 
 void add_process_to_scheduler(struct scheduler_t * scheduler,struct process_t * process) { //Esto es provicional, aqui decide que algoritmo usar para agregar a la cola
@@ -365,16 +365,16 @@ void add_process_to_scheduler(struct scheduler_t * scheduler,struct process_t * 
 
 };
 
-// esto casi que hay que cambiarlo, porque segun lo que dijo el profe es necesario hacer el MFQS dinamicamente.
-// Una solucion sencilla que encontre es por linea del archivo de texto escribir
-// "algoritmo modo quantom/carga" //inf del scheduler
-// "0 1 2" // inf del proceso
-// Entonces procesar por linea, se lee una linea del archivo y se utiliza sscanf() para sacar los terminos,
-//al sscanf() le puedo decir que agarre 3 (o los que quiera) valores del string del formato que le diga.
-//Entonces es facil solo agarrar el string "algoritmo modo quantom/carga" y decirle sscanf %s,%s,%s con 3 variables y lo jala.
-//EN config_template.txt hay una aproximacion del formato del txt con la configuracion
-//Si la cola es MFQS, espera un N, con la cantidad de colas del algoritmo.
-// SERIA BUENO PONER LA CANTIDAD DE PROCESOS QUE ENTRAN? creo que es indiferente.
+/* esto casi que hay que cambiarlo, porque segun lo que dijo el profe es necesario hacer el MFQS dinamicamente.
+   Una solucion sencilla que encontre es por linea del archivo de texto escribir
+   "algoritmo modo quantom/carga" //inf del scheduler
+   "0 1 2" // inf del proceso
+   Entonces procesar por linea, se lee una linea del archivo y se utiliza sscanf() para sacar los terminos,
+   al sscanf() le puedo decir que agarre 3 (o los que quiera) valores del string del formato que le diga.
+   Entonces es facil solo agarrar el string "algoritmo modo quantom/carga" y decirle sscanf %s,%s,%s con 3 variables y lo jala.
+   EN config_template.txt hay una aproximacion del formato del txt con la configuracion
+   Si la cola es MFQS, espera un N, con la cantidad de colas del algoritmo.
+   SERIA BUENO PONER LA CANTIDAD DE PROCESOS QUE ENTRAN? creo que es indiferente.*/
 int load_configuration_and_process(struct scheduler_t * scheduler, struct process_list_t * process_list, char * file) { //Lee el archivo de configuracion y carga la configuracion y los procesos correspondientes.
   //Verifica que el archivo sea correcto. Si todo se ejecuta correctamente devuelve 0.
   //Sino, devuelve 1 si hay un error abriendo el archivo.
@@ -655,28 +655,34 @@ void MFQS_A(struct queue_list_t* queue_list, struct process_t * process) {
   };
 };
 
-
 /* ------------------------------------------------
  Funciones para liberar memoria de las estructuras
 ------------------------------------------------ */
-
 void free_process(struct process_t* process) {
   mpfr_clear((mpfr_ptr)* (process->pi));
   mpfr_clear((mpfr_ptr) *(process->state));
   free(process);
 };
+
 void free_process_list(struct process_list_t * process_list) {
   struct node_t * tmp_node, * actual_node;
-  actual_node = process_list->first_process;
-  while(actual_node != NULL) {
-    tmp_node = actual_node->next;
-    free_process(actual_node->process);
-    free(actual_node);
-    actual_node = tmp_node;
-  };
-  free(process_list);
+  if(process_list == NULL){
+    printf("La lista es nula\n");
+  }
+  else{
+    actual_node = process_list->first_process;
+    while(actual_node != NULL) {
+      tmp_node = actual_node->next;
+      free_process(actual_node->process);
+      free(actual_node);
+      actual_node = tmp_node;
+    }
+    free(process_list);
+    printf("Memoria liberada");
+  }
 
-};
+}
+
 void free_scheduler(struct scheduler_t * scheduler) {
   struct queue_node_t * tmp_queue_node, * tmp_queue_actual;
   if (scheduler->algorithm == MQS) {
@@ -884,25 +890,26 @@ int main(int argc, char *argv[]) {
 
   return status;
   */
-  
+
   //Variables que se utilizan para ejecutar cada proceso, sera necesario definirlas cada vez que haya un cambio
   //proceso actual -> state
   //                  state
   //quantum
-  
+
   //Es necesario saber la configuracion de la cola actual, ya que el MFQS, y MQS tienen multiples colas.
   //actual_scheduler  -> algorithm
   //                  -> type
   //                  -> quatum
   //
-  initialize_process_list(process_list); //Se inicializa la lista de procesos para los procesos cargados del archivo de configuracion
-  initialize_process_list(finished_process); //Se inicializa la lista para los procesos terminados
+  process_list = initialize_process_list(); //Se inicializa la lista de procesos para los procesos cargados del archivo de configuracion
+  finished_process = initialize_process_list(); //Se inicializa la lista para los procesos terminados
   //initialize_scheduler(scheduler); //Se inicializa la cola del scheduler
- 
+
   free_process_list(process_list);
-  //free_process_list(finished_process);
+  free_process_list(finished_process);
   //free_scheduler(scheduler);
   /*
+
   time_g = 0; // inicia en el ciclo 0
   work_done = 0;
   actual_process = NULL;
@@ -921,17 +928,17 @@ int main(int argc, char *argv[]) {
       //Cargar siguiente proceso
       actual_process = next_process(scheduler);
       load_process_state(actual_process,state,&work_done);
-    };
+    }
     if (actual_scheduler->type == PREEMPTIVE) { //Es expropiativo
       while(1) {
         if (is_finished(actual_process) /*|| quantum*) {//Termino el quantum o termino el proceso
           save_process_state(actual_process,state,work_done);
-          
+
           if (is_finished(actual_process)) {
             add_process(finished_process,actual_process);
           } else {
             add_process_to_scheduler(scheduler,actual_process);
-          };
+          }
 
           actual_process = next_process(scheduler);
           load_process_state(actual_process,state,&work_done);
@@ -939,13 +946,13 @@ int main(int argc, char *argv[]) {
         }
         arcsin();
 
-      };
+      }
     } else {//Es no expropiativo
       //
       int limit = work_done + actual_process->work_progress;
       for (work_done;work_done<=limit;work_done++) {
         arcsin();
-      };
+      }
       save_process_state(actual_process,state,work_done);
       actual_process = NULL; //Devuelve el cpu
       if (is_finished(actual_process)) {//Termino el proceso
@@ -953,12 +960,11 @@ int main(int argc, char *argv[]) {
       } else { //No ha terminado el proceso, pero termino la carga asignada antes de devolver voluntariamente el cpu
       //Guarda el estado del proceso
         add_process_to_scheduler(scheduler,actual_process);
-      };
-    };
-  };
-  */
-/*
-  //****************************************************************************
+      }
+    }
+  }
+
+  ******************************************************************************
   mpfr_init2(pi, 256);
   mpfr_init2(state, 256);
 
@@ -979,14 +985,6 @@ int main(int argc, char *argv[]) {
   mpfr_clear(pi);
   mpfr_clear(state);
 
-  //****************************************************************************
-/*  GtkApplication *app;
-  int status;
-
-  app = gtk_application_new ("org.gtk.example", G_APPLICATION_FLAGS_NONE);
-  g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
-  status = g_application_run(G_APPLICATION (app), argc, argv);
-  g_object_unref (app);
-*/
+  *****************************************************************************/
   return 0;
 }

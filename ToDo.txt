@@ -124,3 +124,10 @@ Notas de Madrugada
   comillas simples a comillas dobles
 + Con estos cambios, ya compila, pero sale violación de segmento.
 + Para trabajar en la interfaz, comente todo lo que estuviera en el main.
+*************************************************************************************
+Notas de limpieza
++ En el main el free_process_list() causaba segfault porque la lista que recibe
+  no está inicializada y es nula. De momento agregue dentro de la función unos
+  if's para que revisara si la lista está vacía o si el primer elemento de la
+  lista está vacía.
++
