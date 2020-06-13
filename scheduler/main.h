@@ -7,6 +7,7 @@
 #include <mpfr.h>
 #include <gmp.h>
 #include <string.h>
+#include <time.h>
 
 #define MIN_PROCESS 5
 #define MAX_PROCESS 25
@@ -63,7 +64,7 @@ int is_finished(struct process_t* process); //Dice si el proceso ya completo su 
 struct process_list_t* initialize_process_list();
 int is_list_empty(struct process_list_t* process_list); //Dice si la lista es vacia
 void add_process(struct process_list_t* process_list, struct process_t* process); //Agrega un proceso a la lista
-void process_arrival(struct process_list_t* process_list, struct scheduler_t* scheduler, int tiempo); //Agrega los procesos al scheduler en su tiempo de llegada
+void process_arrival(struct process_list_t* process_list, struct scheduler_t* scheduler); //Agrega los procesos al scheduler en su tiempo de llegada
 
 struct scheduler_t* initialize_scheduler(); //Reserva memoria para el scheduler
 void add_process_to_scheduler(struct scheduler_t * scheduler,struct process_t * process); //Determina que algoritmo utilizar para agregar un proceso a la cola del scheduler
@@ -89,9 +90,10 @@ void on_btnReiniciar_click(GtkButton *button, gpointer user_data);
 
 static void activate(GtkApplication* app, gpointer user_data);
 
-void free_process(struct process_t* process);
-void free_process_list(struct process_list_t * process_list);
-void free_scheduler(struct scheduler_t * scheduler);
+void free_process(struct process_t* process); //Limpia la memoria de un proceso.
+void free_process_list(struct process_list_t * process_list); //Limpia la memoria de una lista de procesos y todos sus procesos.
+void free_scheduler(struct scheduler_t * scheduler); //Limpia la memoria de una cola.
+void free_queue_list(struct queue_list_t* queue_list); //Limpia la memoria de una lista de colas y todas sus colas.
 //Funcion que realiza el cpu de arcsin
 void arcsin();
 
