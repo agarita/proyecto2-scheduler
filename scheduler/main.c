@@ -270,23 +270,23 @@ int is_finished(struct process_t* process) {
 };
 
 void process_arrival(struct process_list_t* process_list, struct scheduler_t* scheduler) {
-  /*if (is_list_empty(process_list))
+  if (is_list_empty(process_list))
     return;
-
+    
   struct node_t* tmp_node,* next_node;
   struct process_t* tmp_process;
   tmp_node = process_list->first_process;
-  printf("Antes del while\n");
+
   while(tmp_node != NULL) {
     if (tmp_node->process->arrival_time <= clock()) {
       tmp_process = tmp_node->process;
       add_process_to_scheduler(scheduler,tmp_process);
       next_node = tmp_node->next;
       free(tmp_node);
+      process_list->first_process = next_node; //Esta mierda era lo que faltaba, no estaba guardando el nuevo primer nodo en la lista
       tmp_node = next_node;
     } else break;
   };
-  printf("Despues del while\n");
   if (is_list_empty(process_list) || tmp_node == NULL)
     return;
 
@@ -298,9 +298,9 @@ void process_arrival(struct process_list_t* process_list, struct scheduler_t* sc
       free(tmp_node->next);
       tmp_node->next = next_node;
     } else{
-      tmp_node->next = tmp_node->next->next;
+      tmp_node->next = tmp_node->next;
     };
-  };*/
+  };
 };
 
 struct process_t* next_process(struct scheduler_t * scheduler) {
@@ -981,6 +981,7 @@ int main(int argc, char *argv[]) {
       //Cargar siguiente proceso
       actual_process = next_process(scheduler);
       load_process_state(actual_process,state,&work_done);
+      printf("carga el proceso: %d", actual_process->id);
     }
     printf("Revisa tipo: %d - %d\n", actual_scheduler->type, PREEMPTIVE); /////////////////////////////////////////////////////////////////////
     if (actual_scheduler->type == PREEMPTIVE) { //Es expropiativo
@@ -1008,29 +1009,30 @@ int main(int argc, char *argv[]) {
     }
     else {//Es no expropiativo
       int limit = work_done + actual_process->work_progress;
-      for (work_done; work_done <= limit; work_done++) {
+      printf("A idproces %d, work done: %d, limit: %d, work progress: %d, work_load: %d\n",actual_process->id,work_done,limit,actual_process->work_progress,actual_process->work_load);
+      for (work_done; work_done < limit; work_done++) {
         if(work_done == actual_process->work_load){
           printf("Termino PID %d con %d terminos\n", actual_process->id, work_done);
           break;
         }
         arcsin();
       }
-
+      printf("B work done: %d, limit: %d, work progress: %d,work_load: %d\n",work_done,limit,actual_process->work_progress,actual_process->work_load);
       //printf("ciclo no preemtive carga de trabajo realizado\n");
       save_process_state(actual_process, state, work_done);
-
-      if (is_finished(actual_process)) {//Termino el proceso
+      printf("c work done: %d, work_load: %d\n",work_done,actual_process->work_load);
+      if (work_done == actual_process->work_load) {//Termino el proceso
         add_process(finished_process,actual_process);
+        printf("carga el proceso: %d", actual_process->id);
       }
       else { //No ha terminado el proceso, pero termino la carga asignada antes de devolver voluntariamente el cpu
       //Guarda el estado del proceso
         printf("va a agregar el proceso al scheduler\n");
         add_process_to_scheduler(scheduler,actual_process);
+        printf("carga el proceso: %d", actual_process->id);
         printf("Agrego el proceso al scheduler\n");
       }
-      printf("No entro al else\n");
       actual_process = NULL; //Devuelve el cpu
-      printf("VIVIO!!!\n");
     }
   }
   return 0;
