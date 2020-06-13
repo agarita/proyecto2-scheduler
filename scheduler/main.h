@@ -52,8 +52,8 @@ int load_scheduler_MFQS_queues(struct scheduler_t* scheduler,FILE* configuration
 int initialize_scheduler_MQS_queue(struct scheduler_t* scheduler); //Inicializa las colas para el algoritmo MQS. De momento 5 colas. Prioridades entre 1-5
 
 struct process_t* initialize_process(int id, int arrival_time, int work_load, int priority);
-void save_process_state(struct process_t* process, mpfr_ptr state, int work_done); //Guarda el estado del proceso cuando se retira de ejecucion
-void load_process_state(struct process_t* process, mpfr_t state, int * work_done); //Carga el estado del proceso cuando se le asigna tiempo de ejecucion
+void save_process_state(struct process_t* process, mpfr_ptr state); //Guarda el estado del proceso cuando se retira de ejecucion
+void load_process_state(struct process_t* process, mpfr_t state); //Carga el estado del proceso cuando se le asigna tiempo de ejecucion
 int is_finished(struct process_t* process); //Dice si un proceso ha terminado
 void calculate_process_work_load(struct process_t* process, int* work_load); //Cualcula la cantidad de trabajo a realizar, cuando se le asigna un tiempo de ejecucion
 
