@@ -48,9 +48,7 @@ Caso en que A = MFQS
 2. N
 3. A | [ M ] | Q/TR
 1. N
-1. sis
-1. s
-1. s
+
 4. A | [ M ] | Q/TR 
 ...
 3+N. A | [ M ] | Q/TR 

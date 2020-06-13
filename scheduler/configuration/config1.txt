@@ -1,7 +1,4 @@
-MFQS PREEMPTIVE 5
-3
-ss
-ss
+RR PREEMPTIVE 5
 
 0 5 1
 0 2 2
