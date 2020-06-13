@@ -273,7 +273,7 @@ int is_finished(struct process_t* process) {
 void process_arrival(struct process_list_t* process_list, struct scheduler_t* scheduler) {
   if (is_list_empty(process_list))
     return;
-    
+
   struct node_t* tmp_node,* next_node;
   struct process_t* tmp_process;
   tmp_node = process_list->first_process;
@@ -743,43 +743,217 @@ void free_queue_list(struct queue_list_t* queue_list) {
 /* --------
  INTERFAZ
 --------*/
-void update_algorithm_GUI (char * algoritmo, char * modo, char * quantum_trabajo, int modeType){
-  gtk_label_set_text(GTK_LABEL(txtAlgoritmo), algoritmo);
-  gtk_label_set_text(GTK_LABEL(txtModo), modo);
-  gtk_label_set_text(GTK_LABEL(txtQuantum_Trabajo), quantum_trabajo);
-  if(modeType == NONPREEMPTIVE){
-    gtk_label_set_text(GTK_LABEL(lblQuantum_Trabajo), "Cantidad de Trabajo:");
+void update_algorithm_GUI (int algoritmo, int modo, int quantum_trabajo){
+  switch (algoritmo) {
+    case FCFS:
+      gtk_label_set_text(GTK_LABEL(txtAlgoritmo), "FCFS");
+      break;
+    case SJF:
+      gtk_label_set_text(GTK_LABEL(txtAlgoritmo), "SJF");
+      break;
+    case RR:
+      gtk_label_set_text(GTK_LABEL(txtAlgoritmo), "RR");
+      break;
+    case PSRR:
+      gtk_label_set_text(GTK_LABEL(txtAlgoritmo), "PSRR");
+      break;
+    case PS:
+      gtk_label_set_text(GTK_LABEL(txtAlgoritmo), "PS");
+      break;
+    case MQS:
+      gtk_label_set_text(GTK_LABEL(txtAlgoritmo), "MQS");
+      break;
+    case MFQS:
+      gtk_label_set_text(GTK_LABEL(txtAlgoritmo), "MQFS");
+      break;
+    default:
+      gtk_label_set_text(GTK_LABEL(txtAlgoritmo), "");
+      break;
   }
-  else{
-    gtk_label_set_text(GTK_LABEL(lblQuantum_Trabajo), "Quantum:");
+  switch (modo) {
+    case PREEMPTIVE:
+      gtk_label_set_text(GTK_LABEL(lblQuantum_Trabajo), "Quantum: ");
+      gtk_label_set_text(GTK_LABEL(txtModo), "Expropiativo");
+      break;
+    case NONPREEMPTIVE:
+      gtk_label_set_text(GTK_LABEL(lblQuantum_Trabajo), "Cantidad de Trabajo: ");
+      gtk_label_set_text(GTK_LABEL(txtModo), "No Expropiativo");
+      break;
+    default:
+      gtk_label_set_text(GTK_LABEL(txtModo), "");
+      break;
   }
-
+  int length = snprintf( NULL, 0, "%d", quantum_trabajo);
+  char* str = malloc (length + 1);
+  snprintf(str, length+1, "%d", quantum_trabajo);
+  gtk_label_set_text(GTK_LABEL(txtQuantum_Trabajo), str);
+  free(str);
 }
 
-void update_active_process_GUI (char * id, char * avance, int work_done, int total_work){
+void update_active_process_GUI (int id, mpfr_t avance, int work_done, int total_work){
   double fraction;
 
-  gtk_label_set_text(GTK_LABEL(txtPID), id);
-  gtk_label_set_text(GTK_LABEL(txtAvance), avance);
+  int length = snprintf( NULL, 0, "%d", id);
+  char* str = malloc (length + 1);
+  snprintf(str, length+1, "%d", id);
+  gtk_label_set_text(GTK_LABEL(txtPID), str);
+
+  char piStr[11];
+  mpfr_exp_t e;
+  mpfr_get_str (piStr, &e, 10, 10, avance, MPFR_RNDD);
+  memmove(piStr+1, piStr, 11);
+  piStr[0] = piStr[1]; piStr[1] = ',';
+
+  gtk_label_set_text(GTK_LABEL(txtAvance), piStr);
+
 
   fraction = (double)(1.0/total_work)*(double)work_done;
-  printf("%F\n", fraction);
   gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(pgProceso), fraction);
+
+  gtk_widget_queue_draw(pgProceso);
+  while (g_main_context_pending(NULL)) {
+      g_main_context_iteration(NULL,FALSE);
+  }
 }
 
 void update_process_list_GUI(){
   GtkTextBuffer *bufferReady, *bufferFinished;
   bufferReady = gtk_text_buffer_new(NULL);
   bufferFinished = gtk_text_buffer_new(NULL);
-  gtk_text_buffer_insert_at_cursor(bufferReady, "Procesos listos!!!", -1);
-  gtk_text_buffer_insert_at_cursor(bufferFinished, "Procesos terminados!!!\n", -1);
-  gtk_text_buffer_insert_at_cursor(bufferFinished, "Procesos terminados!!!\n", -1);
+
+  int n = 1;
+  struct node_t *node;
+  node = actual_scheduler->process_list->first_process;
+  while (node != NULL){
+    int length = snprintf( NULL, 0, "%d", node->process->id);
+    char* str = malloc (length + 1);
+    snprintf(str, length+1, "%d", node->process->id);
+    gtk_text_buffer_insert_at_cursor(bufferReady, str, -1);
+
+    gtk_text_buffer_insert_at_cursor(bufferReady, "  |  ", -1);
+
+    char piStr[20];
+    mpfr_exp_t e;
+    mpfr_get_str (piStr, &e, 10, 20, node->process->pi, MPFR_RNDD);
+    memmove(piStr+1, piStr, 21);
+    piStr[0] = piStr[1]; piStr[1] = ',';
+    gtk_text_buffer_insert_at_cursor(bufferReady, piStr, -1);
+    gtk_text_buffer_insert_at_cursor(bufferReady, "\n", -1);
+
+    node = node->next;
+    n++;
+  }
+  printf("\n\n%d\n\n", n);
+
+  n = 1;
+  node = finished_process->first_process;
+  while (node != NULL){
+    int length = snprintf( NULL, 0, "%d", node->process->id);
+    char* str = malloc (length + 1);
+    snprintf(str, length+1, "%d", node->process->id);
+    gtk_text_buffer_insert_at_cursor(bufferFinished, str, -1);
+
+    gtk_text_buffer_insert_at_cursor(bufferFinished, " |  ", -1);
+
+    char piStr[20];
+    mpfr_exp_t e;
+    mpfr_get_str (piStr, &e, 10, 20, node->process->pi, MPFR_RNDD);
+    memmove(piStr+1, piStr, 21);
+    piStr[0] = piStr[1]; piStr[1] = ',';
+    gtk_text_buffer_insert_at_cursor(bufferFinished, piStr, -1);
+    gtk_text_buffer_insert_at_cursor(bufferFinished, "\n", -1);
+    node = node->next;
+    n++;
+  }
+  printf("\n\n%d\n\n", n);
+
   gtk_text_view_set_buffer (GTK_TEXT_VIEW(tvReady), bufferReady);
   gtk_text_view_set_buffer (GTK_TEXT_VIEW(tvFinished), bufferFinished);
+
+  gtk_widget_queue_draw(tvReady);
+  gtk_widget_queue_draw(tvFinished);
+  while (g_main_context_pending(NULL)) {
+      g_main_context_iteration(NULL,FALSE);
+  }
 }
 
 void on_btnEjecutar_click (GtkButton *button, gpointer user_data){
-  printf("Ejecutar\n");
+  cpu_start = clock() *CLOCKS_PER_SEC/1000;
+  while (1) {
+    printf("proces arrival\n");
+    process_arrival(process_list,scheduler);
+    printf("Pasa proces arrival\n");
+    if ( is_list_empty(process_list) && is_scheduler_empty(scheduler) ) {
+      free_process_list(process_list);
+      free_process_list(finished_process);
+      free_scheduler(scheduler);
+      printf("termina\n");
+      return;
+    }
+    if (actual_process == NULL) { //si no hay un proceso ejecutandose
+      //Cargar siguiente proceso
+      actual_process = next_process(scheduler);
+      load_process_state(actual_process,state);
+      printf("carga el proceso: %d\n", actual_process->id);
+    }
+    printf("Revisa tipo: %d - %d\n", actual_scheduler->type, PREEMPTIVE); /////////////////////////////////////////////////////////////////////
+    if (actual_scheduler->type == PREEMPTIVE) { //Es expropiativo
+      printf("ciclo preemtive\n");
+      cpu_timer = clock()+ actual_scheduler->quantum *CLOCKS_PER_SEC/1000; //asigna quantum al timer
+      while(1) {
+        if (( clock() > cpu_timer ) || (is_finished(actual_process)) ) {//Termino el quantum o termino el proceso
+          save_process_state(actual_process,state);
+          update_process_list_GUI();
+
+          if (is_finished(actual_process)) {
+            add_process(finished_process,actual_process);
+            printf("ciclo preemtive termina proceso\n");
+          } else {
+            printf("ciclo preemtive termina quantum\n");
+            add_process_to_scheduler(scheduler,actual_process);
+            printf("ciclo preemtive agrega proceso a la cola\n");
+          }
+          actual_process = next_process(scheduler);
+          load_process_state(actual_process,state);
+          printf("ciclo preemtive carga siguiente proceso\n");
+          break;
+        }
+        arcsin();
+        update_active_process_GUI(actual_process->id, actual_process->pi, actual_process->work_done, actual_process->work_load);
+      }
+    }
+    else {//Es no expropiativo
+      int limit = work_done + actual_process->work_progress;
+      if (limit > actual_process->work_load)
+        limit = actual_process->work_load;
+      //printf("A idproces %d, work done: %d, limit: %d, work progress: %d, work_load: %d\n",actual_process->id,work_done,limit,actual_process->work_progress,actual_process->work_load);
+      for (work_done; work_done <= limit; work_done++) {
+        if(work_done == actual_process->work_load){
+          arcsin();
+          update_active_process_GUI(actual_process->id, actual_process->pi, actual_process->work_done, actual_process->work_load);
+          break;
+        }
+        arcsin();
+        update_active_process_GUI(actual_process->id, actual_process->pi, actual_process->work_done, actual_process->work_load);
+      }
+      //printf("ciclo no preemtive carga de trabajo realizado\n");
+      save_process_state(actual_process, state);
+      update_process_list_GUI();
+      update_active_process_GUI(actual_process->id, actual_process->pi, actual_process->work_done, actual_process->work_load);
+      if (work_done == actual_process->work_load) {//Termino el proceso
+        add_process(finished_process,actual_process);
+        printf("finaliza: %d,%d,%d\n", actual_process->id,actual_process->work_done,actual_process->work_load);
+      }
+      else { //No ha terminado el proceso, pero termino la carga asignada antes de devolver voluntariamente el cpu
+      //Guarda el estado del proceso
+        printf("va a agregar el proceso al scheduler\n");
+        add_process_to_scheduler(scheduler,actual_process);
+        printf("Agrego el proceso al scheduler: %d,%d,%d\n", actual_process->id,actual_process->work_done,actual_process->work_load);
+      }
+      actual_process = NULL; //Devuelve el cpu
+      printf("libera el cpu\n");
+    }
+  }
 }
 
 void on_btnCargar_click (GtkButton *button, gpointer user_data){
@@ -798,7 +972,24 @@ void on_btnCargar_click (GtkButton *button, gpointer user_data){
 
     //Aquí se obtiene el nombre de archivo
     filename = gtk_file_chooser_get_filename (chooser);
-    printf("%s\n", filename);
+
+    process_list = initialize_process_list(); //Se inicializa la lista de procesos para los procesos cargados del archivo de configuracion
+    finished_process = initialize_process_list(); //Se inicializa la lista para los procesos terminados
+    scheduler = initialize_scheduler(); //Se inicializa la cola del scheduler
+
+    actual_scheduler = scheduler;
+    actual_process = NULL;
+    work_done = 0;
+
+    mpfr_init2(state, 256);
+    mpfr_set_d(state, 0.0, MPFR_RNDD);
+    mpfr_t pi;
+    mpfr_init2(pi, 256);
+    mpfr_set_d(pi, 1.0, MPFR_RNDD);
+
+    load_configuration_and_process(scheduler,process_list,filename); //Se carga la configuracion y los procesos
+    update_algorithm_GUI(scheduler->algorithm, scheduler->type, scheduler->quantum);
+
     g_free(filename);
   }
 
@@ -806,9 +997,20 @@ void on_btnCargar_click (GtkButton *button, gpointer user_data){
 }
 
 void on_btnLimpiar_click (GtkButton *button, gpointer user_data){
-  update_algorithm_GUI("","","",0);
-  update_active_process_GUI("", "", 56, 100);
-  update_process_list_GUI();
+  process_list = initialize_process_list(); //Se inicializa la lista de procesos para los procesos cargados del archivo de configuracion
+  finished_process = initialize_process_list(); //Se inicializa la lista para los procesos terminados
+  scheduler = initialize_scheduler(); //Se inicializa la cola del scheduler
+
+  actual_scheduler = scheduler;
+  actual_process = NULL;
+  work_done = 0;
+
+  mpfr_init2(state, 256);
+  mpfr_set_d(state, 0.0, MPFR_RNDD);
+  mpfr_t pi;
+  mpfr_init2(pi, 256);
+  mpfr_set_d(pi, 1.0, MPFR_RNDD);
+
   printf("Limpiar\n");
 }
 
@@ -848,18 +1050,18 @@ static void activate (GtkApplication* app, gpointer user_data){
   GtkWidget * lblModo = gtk_label_new("Modo: ");
   gtk_widget_set_halign(GTK_WIDGET(lblModo), GTK_ALIGN_START);
   gtk_grid_attach (GTK_GRID (gridlbl), lblModo, 0, 1, 1, 1);
-  lblQuantum_Trabajo = gtk_label_new("Quantum: ");
+  lblQuantum_Trabajo = gtk_label_new("");
   gtk_widget_set_halign(GTK_WIDGET(lblQuantum_Trabajo), GTK_ALIGN_START);
   gtk_grid_attach (GTK_GRID (gridlbl), lblQuantum_Trabajo, 0, 2, 1, 1);
 
   //Create editable lables
-  txtAlgoritmo = gtk_label_new("a");
+  txtAlgoritmo = gtk_label_new("");
   gtk_widget_set_halign(GTK_WIDGET(txtAlgoritmo), GTK_ALIGN_START);
   gtk_grid_attach (GTK_GRID (gridlbl), txtAlgoritmo, 1, 0, 1, 1);
-  txtModo = gtk_label_new("a");
+  txtModo = gtk_label_new("");
   gtk_widget_set_halign(GTK_WIDGET(txtModo), GTK_ALIGN_START);
   gtk_grid_attach (GTK_GRID (gridlbl), txtModo, 1, 1, 1, 1);
-  txtQuantum_Trabajo = gtk_label_new("a");
+  txtQuantum_Trabajo = gtk_label_new("");
   gtk_widget_set_halign(GTK_WIDGET(txtQuantum_Trabajo), GTK_ALIGN_START);
   gtk_grid_attach (GTK_GRID (gridlbl), txtQuantum_Trabajo, 1, 2, 1, 1);
 
@@ -940,10 +1142,22 @@ static void activate (GtkApplication* app, gpointer user_data){
      MAIN
 -------------*/
 int main(int argc, char *argv[]) {
-
-  /*
   GtkApplication *app;
   int status;
+
+  process_list = initialize_process_list(); //Se inicializa la lista de procesos para los procesos cargados del archivo de configuracion
+  finished_process = initialize_process_list(); //Se inicializa la lista para los procesos terminados
+  scheduler = initialize_scheduler(); //Se inicializa la cola del scheduler
+
+  actual_scheduler = scheduler;
+  actual_process = NULL;
+  work_done = 0;
+
+  mpfr_init2(state, 256);
+  mpfr_set_d(state, 0.0, MPFR_RNDD);
+  mpfr_t pi;
+  mpfr_init2(pi, 256);
+  mpfr_set_d(pi, 1.0, MPFR_RNDD);
 
   app = gtk_application_new ("org.gtk.example", G_APPLICATION_FLAGS_NONE);
   g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
@@ -951,93 +1165,4 @@ int main(int argc, char *argv[]) {
   g_object_unref (app);
 
   return status;
-  */
-
-  process_list = initialize_process_list(); //Se inicializa la lista de procesos para los procesos cargados del archivo de configuracion
-  finished_process = initialize_process_list(); //Se inicializa la lista para los procesos terminados
-  scheduler = initialize_scheduler(); //Se inicializa la cola del scheduler
-  mpfr_init2(state, 256);
-  mpfr_set_d(state, 0.0, MPFR_RNDD);
-  work_done = 0;
-  actual_process = NULL;
-  actual_scheduler = scheduler;
-
-  load_configuration_and_process(scheduler,process_list,"./configuration/config_FCFS_NP.txt"); //Se carga la configuracion y los procesos
-  mpfr_t pi;
-  mpfr_init2(pi, 256);
-  mpfr_set_d(pi, 1.0, MPFR_RNDD);
-
-//
-  cpu_start = clock() *CLOCKS_PER_SEC/1000;
-  while (1) {
-    printf("proces arrival\n");
-    process_arrival(process_list,scheduler);
-    printf("Pasa proces arrival\n");
-    if ( is_list_empty(process_list) && is_scheduler_empty(scheduler) ) {
-      free_process_list(process_list);
-      free_process_list(finished_process);
-      free_scheduler(scheduler);
-      printf("termina\n");
-      return 0;
-    }
-    if (actual_process == NULL) { //si no hay un proceso ejecutandose
-      //Cargar siguiente proceso
-      actual_process = next_process(scheduler);
-      load_process_state(actual_process,state);
-      printf("carga el proceso: %d\n", actual_process->id);
-    }
-    printf("Revisa tipo: %d - %d\n", actual_scheduler->type, PREEMPTIVE); /////////////////////////////////////////////////////////////////////
-    if (actual_scheduler->type == PREEMPTIVE) { //Es expropiativo
-      printf("ciclo preemtive\n");
-      cpu_timer = clock()+ actual_scheduler->quantum *CLOCKS_PER_SEC/1000; //asigna quantum al timer
-      while(1) {
-        if (( clock() > cpu_timer ) || (is_finished(actual_process)) ) {//Termino el quantum o termino el proceso
-          save_process_state(actual_process,state);
-
-          if (is_finished(actual_process)) {
-            add_process(finished_process,actual_process);
-            printf("ciclo preemtive termina proceso\n");
-          } else {
-            printf("ciclo preemtive termina quantum\n");
-            add_process_to_scheduler(scheduler,actual_process);
-            printf("ciclo preemtive agrega proceso a la cola\n");
-          }
-          actual_process = next_process(scheduler);
-          load_process_state(actual_process,state);
-          printf("ciclo preemtive carga siguiente proceso\n");
-          break;
-        }
-        arcsin();
-      }
-    }
-    else {//Es no expropiativo
-      int limit = work_done + actual_process->work_progress;
-      if (limit > actual_process->work_load)
-        limit = actual_process->work_load;
-      //printf("A idproces %d, work done: %d, limit: %d, work progress: %d, work_load: %d\n",actual_process->id,work_done,limit,actual_process->work_progress,actual_process->work_load);
-      for (work_done; work_done <= limit; work_done++) {
-        if(work_done == actual_process->work_load){
-          arcsin();
-          printf("Termino PID %d con %d terminos\n", actual_process->id, work_done);
-          break;
-        }
-        arcsin();
-      }
-      //printf("ciclo no preemtive carga de trabajo realizado\n");
-      save_process_state(actual_process, state);
-      if (work_done == actual_process->work_load) {//Termino el proceso
-        add_process(finished_process,actual_process);
-        printf("finaliza: %d,%d,%d\n", actual_process->id,actual_process->work_done,actual_process->work_load);
-      }
-      else { //No ha terminado el proceso, pero termino la carga asignada antes de devolver voluntariamente el cpu
-      //Guarda el estado del proceso
-        printf("va a agregar el proceso al scheduler\n");
-        add_process_to_scheduler(scheduler,actual_process);
-        printf("Agrego el proceso al scheduler: %d,%d,%d\n", actual_process->id,actual_process->work_done,actual_process->work_load);
-      }
-      actual_process = NULL; //Devuelve el cpu
-      printf("libera el cpu\n");
-    }
-  }
-  return 0;
 }
