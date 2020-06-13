@@ -19,8 +19,8 @@ enum scheduler_type_t { PREEMPTIVE, NONPREEMPTIVE };
 
 struct process_t { //Guarda la informacion de un proceso
     int id,arrival_time,work_load,priority,work_done,work_progress,last_queue; //# de proceso, tiempo de llegada, cantidad de trabajo asignado, prioridad,cantidad de trabajo realizado
-    mpfr_t * state; //Estado actual del proceso
-    mpfr_t * pi; //Resultado actual del proceso
+    mpfr_t state; //Estado actual del proceso
+    mpfr_t pi; //Resultado actual del proceso
 };
 struct node_t { //Nodos de las listas
     struct process_t* process; //Guarda la direccion de un proceso

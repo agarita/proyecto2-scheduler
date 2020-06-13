@@ -73,13 +73,13 @@ void arcsin(){ //Calcula un termino. Utiliza las variables globales state y work
 
   mpfr_add (res, res, t, MPFR_RNDD);
   mpfr_set (state, res, MPFR_RNDD);
+
   /*
   mpfr_mul_ui (pi, res, 2, MPFR_RNDD); //Se podria comentar, ya que la suma final se realiza cuando se guarda el estado del proceso
 
   printf("Suma %u de 2arcsin(1) ~ ", work_done);
   mpfr_out_str (stdout, 10, 0, pi, MPFR_RNDD);
   putchar('\n');
-
   mpfr_set_d (a, 1.0, MPFR_RNDD); mpfr_set_d (b, 1.0, MPFR_RNDD);
   mpfr_set_d (c, 1.0, MPFR_RNDD); mpfr_set_d (d, 1.0, MPFR_RNDD);
   mpfr_set_d (u, 1.0, MPFR_RNDD); mpfr_set_d (t, 1.0, MPFR_RNDD);
@@ -92,18 +92,12 @@ void arcsin(){ //Calcula un termino. Utiliza las variables globales state y work
         MANEJO DE ESTRUCTURAS
 -------------------------------------*/
 struct process_t* initialize_process(int id, int arrival_time, int work_load, int priority) { //Reserva memoria e inicializa un proceso
-
-  mpfr_t state,pi;
   struct process_t * new_process;
   new_process = malloc(sizeof(struct process_t));
   if (new_process == NULL) {
     printf("Error allocating memory for process.");
     exit(1);
   }
-  mpfr_init2(state, 256);
-  mpfr_init2(pi, 256);
-  mpfr_set_d(state, 1.0, MPFR_RNDD);
-  mpfr_set_d(pi, 1.0, MPFR_RNDD);
   new_process->id = id;
   new_process->arrival_time = cpu_start + (double) arrival_time;
   new_process->work_load = work_load * (int) WORK_FOR_UNIT;
@@ -111,8 +105,10 @@ struct process_t* initialize_process(int id, int arrival_time, int work_load, in
   new_process->work_done = 0;
   new_process->work_progress = 0;
   new_process->last_queue = 0;
-  new_process->state = &state;
-  new_process->pi = &pi;
+  mpfr_init2(new_process->state, 256);
+  mpfr_set_d(new_process->state, 0.0, MPFR_RNDD);
+  mpfr_init2(new_process->pi, 256);
+  mpfr_set_d(new_process->pi, 1.0, MPFR_RNDD);
   return new_process;
 };
 
@@ -257,16 +253,15 @@ void add_process(struct process_list_t* process_list,struct process_t* process) 
 };
 
 void save_process_state(struct process_t* process, mpfr_ptr state, int work_done) {
-  //process->state = state;
 
-  mpfr_set((mpfr_ptr) *(process->state), (mpfr_ptr) state, MPFR_RNDD);
-  mpfr_mul_ui((mpfr_ptr) *(process->pi), (mpfr_ptr) state, 2, MPFR_RNDD);
+  mpfr_set(process->state, state, MPFR_RNDD);
+  mpfr_mul_ui(process->pi, state, 2, MPFR_RNDD);
   //mpfr_set((mpfr_ptr) *(process->state), (mpfr_ptr) pi, MPFR_RNDD);
   process->work_done = work_done;
 };
 
 void load_process_state(struct process_t* process, mpfr_t state, int * work_done) {
-  mpfr_set(state, (mpfr_ptr) * (process->state), MPFR_RNDD);
+  mpfr_set(state, process->state, MPFR_RNDD);
   work_done = &process->work_done;
 };
 
@@ -275,13 +270,14 @@ int is_finished(struct process_t* process) {
 };
 
 void process_arrival(struct process_list_t* process_list, struct scheduler_t* scheduler) {
-  if (is_list_empty(process_list))
+  /*if (is_list_empty(process_list))
     return;
 
   struct node_t* tmp_node,* next_node;
   struct process_t* tmp_process;
   tmp_node = process_list->first_process;
-  while(tmp_node!=NULL) {
+  printf("Antes del while\n");
+  while(tmp_node != NULL) {
     if (tmp_node->process->arrival_time <= clock()) {
       tmp_process = tmp_node->process;
       add_process_to_scheduler(scheduler,tmp_process);
@@ -290,29 +286,21 @@ void process_arrival(struct process_list_t* process_list, struct scheduler_t* sc
       tmp_node = next_node;
     } else break;
   };
-  printf("proces arrival 3.\n");
-  if (is_list_empty(process_list))
+  printf("Despues del while\n");
+  if (is_list_empty(process_list) || tmp_node == NULL)
     return;
-  
-  printf("proces arrival s.\n");
 
-  if (tmp_node->next == NULL)
-    printf("si era xd.\n");
-  printf("ss ;%d",tmp_node->next->process->id);
-  printf("no era el tmp node");
   while( tmp_node->next != NULL) {
-    printf("xx");
     if (tmp_node->next->process->arrival_time <= clock()) {
-      printf("proces arrival 4.\n");
       tmp_process = tmp_node->next->process;
       add_process_to_scheduler(scheduler,tmp_process);
-      printf("proces arrival 5.\n");
       next_node = tmp_node->next->next;
       free(tmp_node->next);
       tmp_node->next = next_node;
+    } else{
+      tmp_node->next = tmp_node->next->next;
     };
-  };
-  printf("proces arrival SE ARREGLO SOLO.\n");
+  };*/
 };
 
 struct process_t* next_process(struct scheduler_t * scheduler) {
@@ -352,7 +340,7 @@ struct process_t* next_process(struct scheduler_t * scheduler) {
       scheduler->process_list->first_process = tmp_node->next;
       free(tmp_node);
       return tmp_process;
-    } else 
+    } else
       return actual_process;
   } else {
     tmp_node = scheduler->process_list->first_process;
@@ -448,7 +436,7 @@ int load_configuration_and_process(struct scheduler_t * scheduler, struct proces
     printf("Error! incorrect entry.\n");
     return 2;
   };
-  printf("load config pasa cambio de linea\n");
+  //printf("load config pasa cambio de linea\n");
   number_of_process = 0;
   if (type_s == PS || type_s == PSRR || type_s == MQS || priority_required) {
     process_parameters = 3;
@@ -479,14 +467,15 @@ int load_configuration_and_process(struct scheduler_t * scheduler, struct proces
     add_process(process_list,new_process);
     number_of_process++;
   };
-  
+  //printf("# de procesos: %d\n", number_of_process);
+
   if (number_of_process < MIN_PROCESS || number_of_process > MAX_PROCESS) {
     printf("Error! not enough process %d\n", number_of_process);
     return 2;
   }
-  
+
   fclose(configuration_file);
-  printf("load config ends\n");
+  //printf("load config ends\n");
   return 0;
 };
 
@@ -584,10 +573,11 @@ enum scheduling_algorithms_t get_scheduling_algorithm (char* algorithm) {
 };
 
 enum scheduler_type_t get_scheduler_type (char * type_s) {
-  if (strcmp(type_s,"PREEMPTIVE")) {
-    return PREEMPTIVE;
-  } else if (strcmp(type_s,"NONPREEMPTIVE")) {
+  if (strcmp(type_s,"NONPREEMPTIVE ")) {
     return NONPREEMPTIVE;
+  }
+  else if (strcmp(type_s,"PREEMPTIVE ")) {
+    return PREEMPTIVE;
   } else {
     return -1;
   };
@@ -685,8 +675,8 @@ void MFQS_A(struct queue_list_t* queue_list, struct process_t * process) {
  Funciones para liberar memoria de las estructuras
 ------------------------------------------------ */
 void free_process(struct process_t* process) {
-  mpfr_clear((mpfr_ptr)* (process->pi));
-  mpfr_clear((mpfr_ptr) *(process->state));
+  mpfr_clear(process->pi);
+  mpfr_clear(process->state);
   free(process);
 };
 
@@ -721,7 +711,7 @@ void free_scheduler(struct scheduler_t * scheduler) {
     free_process_list(scheduler->process_list);
     free(scheduler->queue_list);
     free(scheduler);
-    
+
   } else if (scheduler->algorithm == MFQS) {
       //falta un toque aqui
     free_queue_list(scheduler->queue_list);
@@ -733,7 +723,7 @@ void free_scheduler(struct scheduler_t * scheduler) {
     free_process_list(scheduler->process_list);
     free(scheduler);
   };
-  
+
 };
 
 void free_queue_list(struct queue_list_t* queue_list) {
@@ -948,6 +938,7 @@ static void activate (GtkApplication* app, gpointer user_data){
 -------------*/
 int main(int argc, char *argv[]) {
 
+  /*
   GtkApplication *app;
   int status;
 
@@ -958,15 +949,21 @@ int main(int argc, char *argv[]) {
 
   return status;
   */
+
   process_list = initialize_process_list(); //Se inicializa la lista de procesos para los procesos cargados del archivo de configuracion
   finished_process = initialize_process_list(); //Se inicializa la lista para los procesos terminados
   scheduler = initialize_scheduler(); //Se inicializa la cola del scheduler
-
+  mpfr_init2(state, 256);
+  mpfr_set_d(state, 0.0, MPFR_RNDD);
   work_done = 0;
   actual_process = NULL;
+  actual_scheduler = scheduler;
 
-  load_configuration_and_process(scheduler,process_list,"./configuration/config1.txt"); //Se carga la configuracion y los procesos
+  load_configuration_and_process(scheduler,process_list,"./configuration/config_FCFS_NP.txt"); //Se carga la configuracion y los procesos
   mpfr_t pi;
+  mpfr_init2(pi, 256);
+  mpfr_set_d(pi, 1.0, MPFR_RNDD);
+
 //
   cpu_start = clock() *CLOCKS_PER_SEC/1000;
   while (1) {
@@ -982,16 +979,14 @@ int main(int argc, char *argv[]) {
     }
     if (actual_process == NULL) { //si no hay un proceso ejecutandose
       //Cargar siguiente proceso
-      printf("carga proceso nuevo\n");
       actual_process = next_process(scheduler);
       load_process_state(actual_process,state,&work_done);
-      printf("Pasa cargar proceso nuevo\n");
     }
+    printf("Revisa tipo: %d - %d\n", actual_scheduler->type, PREEMPTIVE); /////////////////////////////////////////////////////////////////////
     if (actual_scheduler->type == PREEMPTIVE) { //Es expropiativo
-      //asigna quantum al timer
-      cpu_timer = clock()+ actual_scheduler->quantum *CLOCKS_PER_SEC/1000;
+      printf("ciclo preemtive\n");
+      cpu_timer = clock()+ actual_scheduler->quantum *CLOCKS_PER_SEC/1000; //asigna quantum al timer
       while(1) {
-        printf("ciclo preemtive\n");
         if (( clock() > cpu_timer ) || (is_finished(actual_process)) ) {//Termino el quantum o termino el proceso
           save_process_state(actual_process,state,work_done);
 
@@ -1010,22 +1005,32 @@ int main(int argc, char *argv[]) {
         }
         arcsin();
       }
-    } else {//Es no expropiativo
-      //
-      printf("ciclo no preemtive\n");
+    }
+    else {//Es no expropiativo
       int limit = work_done + actual_process->work_progress;
-      for (work_done;(work_done<=limit || !is_finished(actual_process));work_done++) {
+      for (work_done; work_done <= limit; work_done++) {
+        if(work_done == actual_process->work_load){
+          printf("Termino PID %d con %d terminos\n", actual_process->id, work_done);
+          break;
+        }
         arcsin();
       }
-      printf("ciclo no preemtive carga de trabajo realizado\n");
-      save_process_state(actual_process,state,work_done);
+
+      //printf("ciclo no preemtive carga de trabajo realizado\n");
+      save_process_state(actual_process, state, work_done);
+
       if (is_finished(actual_process)) {//Termino el proceso
         add_process(finished_process,actual_process);
-      } else { //No ha terminado el proceso, pero termino la carga asignada antes de devolver voluntariamente el cpu
-      //Guarda el estado del proceso
-        add_process_to_scheduler(scheduler,actual_process);
       }
+      else { //No ha terminado el proceso, pero termino la carga asignada antes de devolver voluntariamente el cpu
+      //Guarda el estado del proceso
+        printf("va a agregar el proceso al scheduler\n");
+        add_process_to_scheduler(scheduler,actual_process);
+        printf("Agrego el proceso al scheduler\n");
+      }
+      printf("No entro al else\n");
       actual_process = NULL; //Devuelve el cpu
+      printf("VIVIO!!!\n");
     }
   }
   return 0;
